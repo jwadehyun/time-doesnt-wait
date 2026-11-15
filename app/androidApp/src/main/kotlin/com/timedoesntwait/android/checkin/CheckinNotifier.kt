@@ -16,6 +16,7 @@ import com.timedoesntwait.domain.Activity
 import com.timedoesntwait.domain.HourSlot
 import com.timedoesntwait.domain.TimeLabels
 import com.timedoesntwait.domain.pingForSlot
+import com.timedoesntwait.domain.usesBuiltInName
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -56,8 +57,12 @@ class CheckinNotifier(
         val lang = platform.language.value
         val range = TimeLabels.hourRange(slot.hour, lang)
 
+        // Recent replies appear as tap-to-send chips under the reply box, like quick responses in Messages.
+        val choices = journal.quickRepliesNow(slot.date, limit = 3).map { it.text }.toTypedArray<CharSequence>()
         val remoteInput = RemoteInput.Builder(CheckinReplyReceiver.KEY_REPLY_TEXT)
             .setLabel(c.getString(R.string.checkin_reply_hint))
+            .setChoices(choices)
+            .setAllowFreeFormInput(true)
             .build()
         val replyAction = NotificationCompat.Action.Builder(
             R.drawable.ic_stat_checkin,
@@ -107,10 +112,14 @@ class CheckinNotifier(
      * Replaces the check-in with "Logged ✓ 2–3 PM · Snack" and dismisses it a few seconds later.
      * Updating the notification is also what stops Android's reply spinner.
      */
-    fun showLogged(slot: HourSlot, activity: Activity?) {
+    fun showLogged(slot: HourSlot, activity: Activity?, activityMissing: Boolean = false) {
         val c = platform.localizedContext()
         val lang = platform.language.value
-        val label = activity?.let { activityLabel(c, it) } ?: c.getString(R.string.uncategorized)
+        val label = when {
+            activity != null -> activityLabel(c, activity)
+            activityMissing -> c.getString(R.string.unknown)
+            else -> c.getString(R.string.uncategorized)
+        }
         val notification = NotificationCompat.Builder(context, CHANNEL_CHECKINS)
             .setSmallIcon(R.drawable.ic_stat_checkin)
             .setColor(INK)
@@ -155,7 +164,7 @@ class CheckinNotifier(
         )
     }
 
-    private fun activityLabel(c: Context, a: Activity): String = when (a.nameKey) {
+    private fun activityLabel(c: Context, a: Activity): String = if (!a.usesBuiltInName) a.name else when (a.nameKey) {
         "grind" -> c.getString(R.string.act_grind)
         "snack" -> c.getString(R.string.act_snack)
         "vibe" -> c.getString(R.string.act_vibe)

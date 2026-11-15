@@ -88,7 +88,7 @@ class CheckinReplyReceiver : BroadcastReceiver(), KoinComponent {
                 return@runAsync
             }
             val activity = entry.activityId?.let { id -> journal.allActivities().first().firstOrNull { it.id == id } }
-            notifier.showLogged(slot, activity)
+            notifier.showLogged(slot, activity, activityMissing = entry.activityId != null && activity == null)
         }
     }
 

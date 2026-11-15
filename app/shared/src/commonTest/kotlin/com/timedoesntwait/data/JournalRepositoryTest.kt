@@ -6,6 +6,7 @@ import com.timedoesntwait.domain.EntrySource
 import com.timedoesntwait.domain.HourSlot
 import com.timedoesntwait.domain.TimelineRow
 import com.timedoesntwait.domain.buildTimeline
+import com.timedoesntwait.domain.usesBuiltInName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -119,5 +120,55 @@ class JournalRepositoryTest {
         listOf(9, 10, 11).forEach { repo.logActivity(HourSlot(day, it), walk.id, EntrySource.APP) }
         repo.logActivity(HourSlot(day, 12), chat.id, EntrySource.APP)
         assertEquals(listOf(walk.id, chat.id), repo.topActivities(day).map { it.id })
+    }
+
+    @Test
+    fun editedActivityChangesPastEntries() = runTest {
+        val snack = repo.activities().first().first { it.nameKey == "snack" }
+        repo.logActivity(HourSlot(day, 12), snack.id, EntrySource.APP)
+        repo.updateActivity(snack.id, "Food", "🍜")
+        val row = repo.allActivities().first().first { it.id == snack.id }
+        assertEquals("Food", row.name)
+        assertEquals("🍜", row.icon)
+        assertTrue(!row.usesBuiltInName, "renamed built-ins show the user's name in every language")
+        // The old entry still points at the same activity, so it shows the new name and icon.
+        assertEquals(snack.id, repo.entryFor(HourSlot(day, 12))!!.activityId)
+        // Built-in keywords still help guessing after a rename.
+        assertEquals(snack.id, repo.logText(HourSlot(day, 13), "ramen", EntrySource.APP).activityId)
+    }
+
+    @Test
+    fun deletedActivityIsKeptForPastEntries() = runTest {
+        val walk = repo.activities().first().first { it.nameKey == "walk" }
+        repo.logActivity(HourSlot(day, 9), walk.id, EntrySource.APP)
+        repo.deleteActivity(walk.id)
+        assertTrue(repo.activities().first().none { it.id == walk.id }, "gone from the picker")
+        assertTrue(repo.allActivities().first().any { it.id == walk.id }, "kept for old entries")
+        assertEquals(walk.id, repo.entryFor(HourSlot(day, 9))!!.activityId)
+        // Deleted activities are no longer guessed.
+        assertNull(repo.logText(HourSlot(day, 10), "walk", EntrySource.APP).activityId)
+    }
+
+    @Test
+    fun timelineMarksMissingActivityAsUnknown() = runTest {
+        repo.saveEntry(HourSlot(day, 9), "no-such-activity", null, "", EntrySource.APP)
+        val row = buildTimeline(
+            CheckinSchedule.DEFAULT, repo.entriesFor(day).first(),
+            repo.allActivities().first().associateBy { it.id }, emptyMap(), day, LocalDateTime(2026, 11, 16, 10, 5),
+        ).filterIsInstance<TimelineRow.Logged>().single()
+        assertTrue(row.activityMissing)
+    }
+
+    @Test
+    fun quickRepliesAndReuse() = runTest {
+        val chat = repo.activities().first().first { it.nameKey == "chat" }
+        // Logged once with a hand-picked activity the guesser wouldn't choose.
+        repo.saveFromApp(HourSlot(day, 9), chat.id, null, "standup", emptySet(), EntrySource.APP)
+        repo.logText(HourSlot(day, 10), "lunch", EntrySource.APP)
+        repo.logText(HourSlot(day, 11), "Lunch", EntrySource.APP)
+        val replies = repo.quickReplies(day).first()
+        assertEquals(listOf("lunch", "standup"), replies.map { it.text.lowercase() }, "most used first, case-merged")
+        // Sending the same text again reuses the activity it was logged with last time.
+        assertEquals(chat.id, repo.logText(HourSlot(day, 12), "standup", EntrySource.NOTIFICATION_REPLY).activityId)
     }
 }

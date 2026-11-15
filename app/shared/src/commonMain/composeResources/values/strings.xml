@@ -136,4 +136,22 @@
     <string name="settings_unsynced">%1$d changes waiting to sync</string>
     <string name="settings_sync_later">Cloud sync and sign-in arrive in a later build.</string>
     <string name="settings_version">VERSION %1$s</string>
+
+    <!-- Quick reply + activity editor -->
+    <string name="save">SAVE</string>
+    <string name="unknown">Unknown</string>
+    <string name="ql_quick_hint">Type what you did, then send</string>
+    <string name="ql_send">Send</string>
+    <string name="ql_recent">RECENT</string>
+    <string name="ql_details">OR ADD DETAILS</string>
+    <string name="ql_hold_to_edit">HOLD TO EDIT</string>
+    <string name="ql_edit">[ EDIT ]</string>
+    <string name="ql_edit_done">[ DONE ]</string>
+    <string name="ql_edit_activity">EDIT ACTIVITY</string>
+    <string name="ql_icon">ICON</string>
+    <string name="ql_emoji_hint">Or type an emoji</string>
+    <string name="ql_delete_activity">DELETE ACTIVITY</string>
+    <string name="ql_delete_confirm">TAP AGAIN TO DELETE</string>
+    <string name="ql_delete_note">Hours you already logged keep showing it.</string>
+    <string name="tl_just_saved">✓ JUST SAVED</string>
 </resources>

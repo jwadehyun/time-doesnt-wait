@@ -2,6 +2,7 @@ package com.timedoesntwait.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,8 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -26,6 +29,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,6 +41,7 @@ import com.timedoesntwait.domain.EntrySource
 import com.timedoesntwait.domain.Goal
 import com.timedoesntwait.domain.HourSlot
 import com.timedoesntwait.domain.MEMO_MAX_LENGTH
+import com.timedoesntwait.domain.QuickReply
 import com.timedoesntwait.domain.TimeLabels
 import com.timedoesntwait.domain.Vibe
 import com.timedoesntwait.domain.currentSlot
@@ -51,8 +56,10 @@ import com.timedoesntwait.resources.perm_banner_alarms
 import com.timedoesntwait.resources.perm_banner_late
 import com.timedoesntwait.resources.perm_banner_notifications
 import com.timedoesntwait.resources.ql_activity
-import com.timedoesntwait.resources.ql_activity_name
 import com.timedoesntwait.resources.ql_add
+import com.timedoesntwait.resources.ql_details
+import com.timedoesntwait.resources.ql_edit
+import com.timedoesntwait.resources.ql_edit_done
 import com.timedoesntwait.resources.ql_goal_achieved
 import com.timedoesntwait.resources.ql_goal_mark_achieved
 import com.timedoesntwait.resources.ql_goal_name
@@ -62,16 +69,18 @@ import com.timedoesntwait.resources.ql_goal_progress
 import com.timedoesntwait.resources.ql_goal_target
 import com.timedoesntwait.resources.ql_goals
 import com.timedoesntwait.resources.ql_header
+import com.timedoesntwait.resources.ql_hold_to_edit
 import com.timedoesntwait.resources.ql_logged_already
-import com.timedoesntwait.resources.ql_memo_hint
-import com.timedoesntwait.resources.ql_new_activity
 import com.timedoesntwait.resources.ql_new_goal
 import com.timedoesntwait.resources.ql_question
+import com.timedoesntwait.resources.ql_quick_hint
+import com.timedoesntwait.resources.ql_recent
 import com.timedoesntwait.resources.ql_save
-import com.timedoesntwait.resources.ql_saved
-import com.timedoesntwait.resources.ql_single_choice
+import com.timedoesntwait.resources.ql_send
 import com.timedoesntwait.resources.ql_vibe
+import com.timedoesntwait.ui.components.ActivityIcon
 import com.timedoesntwait.ui.components.Banner
+import com.timedoesntwait.ui.components.IconSquareButton
 import com.timedoesntwait.ui.components.PixelButton
 import com.timedoesntwait.ui.components.PixelCard
 import com.timedoesntwait.ui.components.PixelIcon
@@ -86,19 +95,26 @@ import com.timedoesntwait.ui.label
 import com.timedoesntwait.ui.rememberNow
 import com.timedoesntwait.ui.theme.Cobalt
 import com.timedoesntwait.ui.theme.CobaltTheme
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.plus
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
+/**
+ * The Log tab. Top: a message-style composer (type + send, or tap a recent reply) that logs the
+ * hour without choosing anything else. Below: optional details (activity, vibe, goals).
+ * Saving either way jumps to the Timeline via [onSaved].
+ */
 @Composable
 fun QuickLogScreen(
     requestedSlot: HourSlot?,
     onSlotChange: (HourSlot?) -> Unit,
     onOpenPermissions: () -> Unit,
+    onSaved: (HourSlot) -> Unit,
 ) {
     val repo = koinInject<JournalRepository>()
     val settings = koinInject<SettingsRepository>()
@@ -108,18 +124,21 @@ fun QuickLogScreen(
     val now by rememberNow()
 
     val slot = requestedSlot ?: currentSlot(now)
-    val activities by repo.activities().collectAsState(emptyList())
-    val vibes by repo.vibes().collectAsState(emptyList())
-    val goals by repo.goals().collectAsState(emptyList())
+    val activities by remember { repo.activities() }.collectAsState(emptyList())
+    val vibes by remember { repo.vibes() }.collectAsState(emptyList())
+    val goals by remember { repo.goals() }.collectAsState(emptyList())
+    val quickReplies by remember(now.date) { repo.quickReplies(now.date) }.collectAsState(emptyList())
     val permissions by platform.permissions.collectAsState()
-    val lateness by settings.lastAlarmLatenessFlow().collectAsState(0)
+    val lateness by remember { settings.lastAlarmLatenessFlow() }.collectAsState(0)
 
     var activityId by remember { mutableStateOf<String?>(null) }
     var vibeId by remember { mutableStateOf<String?>(null) }
     var memo by remember { mutableStateOf("") }
     var goalIds by remember { mutableStateOf(emptySet<String>()) }
     var alreadyLogged by remember { mutableStateOf(false) }
-    var savedMessage by remember { mutableStateOf<String?>(null) }
+    var saving by remember { mutableStateOf(false) }
+    var editMode by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<Activity?>(null) }
     var showNewActivity by remember { mutableStateOf(false) }
     var showNewGoal by remember { mutableStateOf(false) }
 
@@ -131,11 +150,28 @@ fun QuickLogScreen(
         goalIds = repo.goalIdsFor(slot)
         alreadyLogged = existing != null
     }
-    val savedText = stringResource(Res.string.ql_saved, TimeLabels.hourRange(slot.hour, lang))
-    LaunchedEffect(savedMessage) {
-        if (savedMessage != null) {
-            delay(2500)
-            savedMessage = null
+    // A deleted activity can't stay selected.
+    LaunchedEffect(activities) {
+        if (activityId != null && activities.isNotEmpty() && activities.none { it.id == activityId }) activityId = null
+    }
+
+    fun save(text: String = memo) {
+        if (saving) return
+        saving = true
+        scope.launch {
+            try {
+                repo.saveFromApp(
+                    slot = slot,
+                    activityId = activityId,
+                    vibeId = vibeId,
+                    memo = text,
+                    goalIds = goalIds,
+                    source = if (pingForSlot(slot) < now.minusHours(1)) EntrySource.BACKFILL else EntrySource.APP,
+                )
+                onSaved(slot)
+            } finally {
+                saving = false
+            }
         }
     }
 
@@ -173,20 +209,63 @@ fun QuickLogScreen(
             HeaderArrow("right", enabled = canGoNext) { if (canGoNext) onSlotChange(next) }
         }
 
+        // Quick reply: type and send, like a message. Nothing else needs choosing.
         PixelCard(Modifier.fillMaxWidth(), padding = 14.dp) {
             PixelText(stringResource(Res.string.ql_question, TimeLabels.hourRange(slot.hour, lang)), style = CobaltTheme.type.title)
             if (alreadyLogged) {
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(4.dp))
                 PixelText(stringResource(Res.string.ql_logged_already), style = CobaltTheme.type.small)
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                PixelTextField(
+                    value = memo,
+                    onValueChange = { memo = it },
+                    placeholder = stringResource(Res.string.ql_quick_hint),
+                    maxLength = MEMO_MAX_LENGTH,
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                    keyboardActions = KeyboardActions(onSend = { if (memo.isNotBlank()) save() }),
+                )
+                Spacer(Modifier.width(10.dp))
+                IconSquareButton(
+                    icon = "send",
+                    description = stringResource(Res.string.ql_send),
+                    onClick = { if (memo.isNotBlank()) save() },
+                    filled = memo.isNotBlank(),
+                )
+            }
+            if (quickReplies.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                PixelText(stringResource(Res.string.ql_recent), style = CobaltTheme.type.small)
+                Spacer(Modifier.height(6.dp))
+                QuickReplyChips(quickReplies) { reply -> save(reply.text) }
             }
         }
 
-        // Activities: single choice, tap again to clear.
-        SectionLabel(stringResource(Res.string.ql_activity), trailing = stringResource(Res.string.ql_single_choice))
+        // Optional details
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f).height(2.dp).background(Cobalt.Ink))
+            PixelText(stringResource(Res.string.ql_details), style = CobaltTheme.type.small, modifier = Modifier.padding(horizontal = 10.dp))
+            Box(Modifier.weight(1f).height(2.dp).background(Cobalt.Ink))
+        }
+
+        // Activities: tap to choose (tap again to clear), hold or [ EDIT ] to rename / change icon / delete.
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            PixelText(stringResource(Res.string.ql_activity), style = CobaltTheme.type.label, modifier = Modifier.weight(1f))
+            PixelText(
+                stringResource(if (editMode) Res.string.ql_edit_done else Res.string.ql_edit),
+                style = CobaltTheme.type.label,
+                modifier = Modifier.clickable { editMode = !editMode }.padding(horizontal = 4.dp, vertical = 12.dp),
+            )
+        }
+        PixelText(stringResource(Res.string.ql_hold_to_edit), style = CobaltTheme.type.small)
         ActivityGrid(
             activities = activities,
             selectedId = activityId,
+            editMode = editMode,
             onSelect = { activityId = if (activityId == it) null else it },
+            onEdit = { editing = it },
             onAdd = { showNewActivity = true },
         )
 
@@ -205,59 +284,52 @@ fun QuickLogScreen(
         }
         PixelTextButton(stringResource(Res.string.ql_goal_new), { showNewGoal = true }, Modifier.fillMaxWidth())
 
-        PixelTextField(
-            value = memo,
-            onValueChange = { memo = it },
-            placeholder = stringResource(Res.string.ql_memo_hint),
-            maxLength = MEMO_MAX_LENGTH,
-        )
-
-        if (savedMessage != null) {
-            PixelText(savedMessage!!, style = CobaltTheme.type.label, align = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-        }
         Box(Modifier.fillMaxWidth().halftone(Cobalt.Ink.copy(alpha = 0.35f)).padding(vertical = 12.dp)) {
             PixelTextButton(
                 stringResource(Res.string.ql_save),
-                onClick = {
-                    scope.launch {
-                        repo.saveEntry(
-                            slot = slot,
-                            activityId = activityId,
-                            vibeId = vibeId,
-                            memo = memo,
-                            source = if (pingForSlot(slot) < now.minusHours(1)) EntrySource.BACKFILL else EntrySource.APP,
-                            goalIds = goalIds,
-                        )
-                        alreadyLogged = true
-                        savedMessage = savedText
-                    }
-                },
+                onClick = { save() },
                 modifier = Modifier.fillMaxWidth(),
                 filled = true,
                 big = true,
+                enabled = !saving,
             )
         }
     }
 
     if (showNewActivity) {
-        NameDialog(
-            title = stringResource(Res.string.ql_new_activity),
-            fieldHint = stringResource(Res.string.ql_activity_name),
-            withNumber = false,
+        ActivityEditorDialog(
+            existing = null,
             onDismiss = { showNewActivity = false },
-            onCreate = { name, _ ->
+            onSave = { name, icon ->
                 scope.launch {
-                    activityId = repo.addActivity(name).id
+                    activityId = repo.addActivity(name, icon).id
                     showNewActivity = false
+                }
+            },
+            onDelete = null,
+        )
+    }
+    editing?.let { activity ->
+        ActivityEditorDialog(
+            existing = activity,
+            onDismiss = { editing = null },
+            onSave = { name, icon ->
+                scope.launch {
+                    repo.updateActivity(activity.id, name, icon)
+                    editing = null
+                }
+            },
+            onDelete = {
+                scope.launch {
+                    repo.deleteActivity(activity.id)
+                    if (activityId == activity.id) activityId = null
+                    editing = null
                 }
             },
         )
     }
     if (showNewGoal) {
-        NameDialog(
-            title = stringResource(Res.string.ql_new_goal),
-            fieldHint = stringResource(Res.string.ql_goal_name),
-            withNumber = true,
+        NewGoalDialog(
             onDismiss = { showNewGoal = false },
             onCreate = { name, hours ->
                 scope.launch {
@@ -275,10 +347,10 @@ private fun previous(slot: HourSlot) =
 private fun next(slot: HourSlot) =
     if (slot.hour == 23) HourSlot(slot.date.plus(DatePeriod(days = 1)), 0) else HourSlot(slot.date, slot.hour + 1)
 
-private fun kotlinx.datetime.LocalDateTime.minusHours(h: Int): kotlinx.datetime.LocalDateTime {
+private fun LocalDateTime.minusHours(h: Int): LocalDateTime {
     val total = hour - h
-    return if (total >= 0) kotlinx.datetime.LocalDateTime(date, kotlinx.datetime.LocalTime(total, minute))
-    else kotlinx.datetime.LocalDateTime(date.minus(DatePeriod(days = 1)), kotlinx.datetime.LocalTime(total + 24, minute))
+    return if (total >= 0) LocalDateTime(date, LocalTime(total, minute))
+    else LocalDateTime(date.minus(DatePeriod(days = 1)), LocalTime(total + 24, minute))
 }
 
 @Composable
@@ -290,29 +362,68 @@ private fun HeaderArrow(icon: String, enabled: Boolean = true, onClick: () -> Un
     ) { PixelIcon(icon, size = 18.dp, color = if (enabled) Cobalt.Card else Cobalt.DeepInk) }
 }
 
+/** Recent replies as one-tap chips, like smart replies in a messaging app. Tapping one logs it. */
 @Composable
-private fun ActivityGrid(activities: List<Activity>, selectedId: String?, onSelect: (String) -> Unit, onAdd: () -> Unit) {
+private fun QuickReplyChips(replies: List<QuickReply>, onPick: (QuickReply) -> Unit) {
+    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        replies.forEach { reply ->
+            PixelButton(
+                onClick = { onPick(reply) },
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                contentDescription = reply.text,
+            ) { fg ->
+                PixelText(reply.text, style = CobaltTheme.type.user, color = fg, maxLines = 1)
+            }
+        }
+        Spacer(Modifier.width(4.dp)) // room for the last chip's shadow
+    }
+}
+
+@Composable
+private fun ActivityGrid(
+    activities: List<Activity>,
+    selectedId: String?,
+    editMode: Boolean,
+    onSelect: (String) -> Unit,
+    onEdit: (Activity) -> Unit,
+    onAdd: () -> Unit,
+) {
     val tiles: List<Activity?> = activities + null // null = the ADD tile
     tiles.chunked(4).forEach { row ->
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(bottom = 4.dp)) {
             row.forEach { activity ->
-                val selected = activity != null && activity.id == selectedId
-                PixelButton(
-                    onClick = { if (activity == null) onAdd() else onSelect(activity.id) },
-                    filled = selected,
-                    modifier = Modifier.weight(1f).height(72.dp),
-                    contentPadding = PaddingValues(4.dp),
-                ) { fg ->
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        PixelIcon(activity?.icon ?: "plus", size = 24.dp, color = fg)
-                        Spacer(Modifier.height(6.dp))
-                        PixelText(
-                            (activity?.label() ?: stringResource(Res.string.ql_add)).uppercase(),
-                            style = CobaltTheme.type.small,
-                            color = fg,
-                            maxLines = 1,
-                            align = TextAlign.Center,
-                        )
+                val selected = activity != null && activity.id == selectedId && !editMode
+                Box(Modifier.weight(1f)) {
+                    PixelButton(
+                        onClick = {
+                            when {
+                                activity == null -> onAdd()
+                                editMode -> onEdit(activity)
+                                else -> onSelect(activity.id)
+                            }
+                        },
+                        onLongClick = activity?.let { { onEdit(it) } },
+                        filled = selected,
+                        modifier = Modifier.fillMaxWidth().height(72.dp),
+                        contentPadding = PaddingValues(4.dp),
+                    ) { fg ->
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            ActivityIcon(activity?.icon ?: "plus", size = 24.dp, color = fg)
+                            Spacer(Modifier.height(6.dp))
+                            PixelText(
+                                (activity?.label() ?: stringResource(Res.string.ql_add)).uppercase(),
+                                style = CobaltTheme.type.small,
+                                color = fg,
+                                maxLines = 1,
+                                align = TextAlign.Center,
+                            )
+                        }
+                    }
+                    if (editMode && activity != null) {
+                        Box(
+                            Modifier.align(Alignment.TopEnd).padding(4.dp).size(18.dp).background(Cobalt.Ink),
+                            contentAlignment = Alignment.Center,
+                        ) { PixelIcon("pencil", size = 12.dp, color = Cobalt.Card) }
                     }
                 }
             }
@@ -380,32 +491,24 @@ private fun GoalRow(goal: Goal, countedThisHour: Boolean, onToggle: () -> Unit, 
 }
 
 @Composable
-private fun NameDialog(
-    title: String,
-    fieldHint: String,
-    withNumber: Boolean,
-    onDismiss: () -> Unit,
-    onCreate: (String, Int) -> Unit,
-) {
+private fun NewGoalDialog(onDismiss: () -> Unit, onCreate: (String, Int) -> Unit) {
     var name by remember { mutableStateOf("") }
     var hours by remember { mutableStateOf("10") }
     Dialog(onDismissRequest = onDismiss) {
         PixelCard(Modifier.fillMaxWidth()) {
-            PixelText(title, style = CobaltTheme.type.title)
+            PixelText(stringResource(Res.string.ql_new_goal), style = CobaltTheme.type.title)
             Spacer(Modifier.height(12.dp))
-            PixelTextField(name, { name = it }, fieldHint, maxLength = 24, singleLine = true)
-            if (withNumber) {
-                Spacer(Modifier.height(12.dp))
-                PixelText(stringResource(Res.string.ql_goal_target), style = CobaltTheme.type.small)
-                Spacer(Modifier.height(4.dp))
-                PixelTextField(
-                    hours,
-                    { v -> hours = v.filter { it.isDigit() }.take(4) },
-                    "10",
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                )
-            }
+            PixelTextField(name, { name = it }, stringResource(Res.string.ql_goal_name), maxLength = 24, singleLine = true)
+            Spacer(Modifier.height(12.dp))
+            PixelText(stringResource(Res.string.ql_goal_target), style = CobaltTheme.type.small)
+            Spacer(Modifier.height(4.dp))
+            PixelTextField(
+                hours,
+                { v -> hours = v.filter { it.isDigit() }.take(4) },
+                "10",
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            )
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 PixelTextButton(stringResource(Res.string.cancel), onDismiss, Modifier.weight(1f))
@@ -415,7 +518,7 @@ private fun NameDialog(
                     { onCreate(name, target) },
                     Modifier.weight(1f),
                     filled = true,
-                    enabled = name.isNotBlank() && (!withNumber || target > 0),
+                    enabled = name.isNotBlank() && target > 0,
                 )
             }
         }

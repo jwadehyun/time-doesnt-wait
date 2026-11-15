@@ -143,6 +143,13 @@ VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?);
 maxActivitySort:
 SELECT coalesce(max(sort_order), 0) FROM activity;
 
+updateActivity:
+UPDATE activity SET name = :name, icon = :icon, updated_at = :now WHERE id = :id;
+
+-- "Delete" keeps the row (archived) so past entries still show the activity's name and icon.
+archiveActivity:
+UPDATE activity SET archived = 1, updated_at = :now WHERE id = :id;
+
 -- Activities ranked by how often they were logged in the last N days (for quick-reply buttons).
 topActivitiesSince:
 SELECT a.* FROM activity a
@@ -176,6 +183,13 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 updateEntry:
 UPDATE entry SET activity_id = ?, vibe_id = ?, memo = ?, source = ?, category_guessed = ?, logged_at = ?, updated_at = ?
 WHERE id = ?;
+
+-- Recent typed replies, newest first, for quick-reply suggestions.
+recentMemos:
+SELECT memo, activity_id, logged_at FROM entry
+WHERE deleted_at IS NULL AND memo != '' AND local_date >= :sinceDate
+ORDER BY logged_at DESC
+LIMIT 300;
 
 softDeleteEntry:
 UPDATE entry SET deleted_at = :now, updated_at = :now WHERE id = :id;

@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -67,7 +68,7 @@ fun SettingsScreen(onBack: () -> Unit, onCheckinHours: () -> Unit, onPermissions
     val journal = koinInject<JournalRepository>()
     val language by platform.language.collectAsState()
     val permissions by platform.permissions.collectAsState()
-    val unsynced by journal.outboxCount().collectAsState(0L)
+    val unsynced by remember { journal.outboxCount() }.collectAsState(0L)
     val lang = CobaltTheme.language
 
     Column(Modifier.fillMaxSize()) {

@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.timedoesntwait.domain.HourSlot
+import kotlinx.datetime.LocalDate
 
 enum class Tab { LOG, TIMELINE, REVIEW, STATS }
 
@@ -25,6 +26,12 @@ class AppState(onboarded: Boolean) {
 
     /** The hour the Log tab is editing. Null = the hour that just ended. */
     var logSlot by mutableStateOf<HourSlot?>(null)
+
+    /** Day shown on the Timeline. Null = today. */
+    var timelineDate by mutableStateOf<LocalDate?>(null)
+
+    /** The hour just saved: the Timeline scrolls to it and marks it. */
+    var timelineFocus by mutableStateOf<HourSlot?>(null)
 
     val current: Route get() = stack.last()
 
@@ -48,6 +55,14 @@ class AppState(onboarded: Boolean) {
             return true
         }
         return false
+    }
+
+    /** After saving a log: show it on the Timeline. */
+    fun showInTimeline(slot: HourSlot) {
+        logSlot = null
+        timelineDate = slot.date
+        timelineFocus = slot
+        tab = Tab.TIMELINE
     }
 
     /** Opens Quick Log for [slot], e.g. from a notification tap or Timeline "Fill in". */

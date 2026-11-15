@@ -4,6 +4,9 @@ import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import com.timedoesntwait.db.AppDatabase
 import com.timedoesntwait.domain.Activity
+import com.timedoesntwait.domain.BuiltIns
+import com.timedoesntwait.domain.QuickReply
+import com.timedoesntwait.domain.buildQuickReplies
 import com.timedoesntwait.domain.CategoryGuesser
 import com.timedoesntwait.domain.Entry
 import com.timedoesntwait.domain.EntrySource
@@ -14,6 +17,7 @@ import com.timedoesntwait.domain.MEMO_MAX_LENGTH
 import com.timedoesntwait.domain.Vibe
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
@@ -45,19 +49,19 @@ class JournalRepository(
         db.transaction {
             val t = now()
             if (q.activityCount().executeAsOne() == 0L) {
-                DEFAULT_ACTIVITIES.forEachIndexed { i, (key, name, icon) ->
+                BuiltIns.ACTIVITIES.forEachIndexed { i, (key, name, icon) ->
                     val id = Ids.uuidV7(t)
                     q.insertActivity(id, name, key, icon, "", (i + 1).toLong(), 1, t)
                     q.enqueue("activity", id, t)
                 }
-                DEFAULT_VIBES.forEachIndexed { i, (key, label, kaomoji) ->
+                BuiltIns.VIBES.forEachIndexed { i, (key, label, kaomoji) ->
                     val id = Ids.uuidV7(t)
                     q.insertVibe(id, label, key, kaomoji, (i + 1).toLong(), t)
                     q.enqueue("vibe", id, t)
                 }
             }
             if (q.ratingDimensionCount().executeAsOne() == 0L) {
-                DEFAULT_RATINGS.forEachIndexed { i, (key, name, kind) ->
+                BuiltIns.RATINGS.forEachIndexed { i, (key, name, kind) ->
                     val id = Ids.uuidV7(t)
                     q.insertRatingDimension(id, name, key, kind, (i + 1).toLong(), 1, t)
                     q.enqueue("rating_dimension", id, t)
@@ -138,19 +142,72 @@ class JournalRepository(
         entry
     }
 
-    /** Logs [text] for [slot], guessing the activity from the words used. */
+    /**
+     * Logs [text] for [slot] with no other choices made (notification reply, quick-reply chip,
+     * the Log page's send button). The activity is picked automatically.
+     */
     suspend fun logText(slot: HourSlot, text: String, source: EntrySource): Entry {
-        val activity = withContext(io) { CategoryGuesser(activeActivitiesNow()).guess(text) }
+        val activityId = resolveActivity(text)
         val existing = entryFor(slot)
         return saveEntry(
             slot = slot,
-            activityId = activity?.id ?: existing?.activityId,
+            activityId = activityId ?: existing?.activityId,
             vibeId = existing?.vibeId,
             memo = text,
             source = source,
-            categoryGuessed = activity != null,
+            categoryGuessed = activityId != null,
         )
     }
+
+    /**
+     * Saves from the Log page. Activity, vibe and goals are all optional; with no activity chosen,
+     * one is picked from the text the same way as a notification reply.
+     */
+    suspend fun saveFromApp(
+        slot: HourSlot,
+        activityId: String?,
+        vibeId: String?,
+        memo: String,
+        goalIds: Set<String>,
+        source: EntrySource,
+    ): Entry {
+        val guessed = if (activityId == null && memo.isNotBlank()) resolveActivity(memo) else null
+        return saveEntry(
+            slot = slot,
+            activityId = activityId ?: guessed,
+            vibeId = vibeId,
+            memo = memo,
+            source = source,
+            categoryGuessed = guessed != null,
+            goalIds = goalIds,
+        )
+    }
+
+    /**
+     * Picks an activity for free text: if the same text was logged before (ignoring case), reuse that
+     * entry's activity, as long as it still exists; otherwise guess from keywords. Null = Uncategorized.
+     */
+    suspend fun resolveActivity(text: String): String? = withContext(io) {
+        val active = activeActivitiesNow()
+        val activeIds = active.map { it.id }.toSet()
+        val key = text.trim().lowercase()
+        val reused = q.recentMemos(LocalDate(1970, 1, 1).toString()).executeAsList()
+            .firstOrNull { it.memo.trim().lowercase() == key && it.activity_id in activeIds }
+            ?.activity_id
+        reused ?: CategoryGuesser(active).guess(text)?.id
+    }
+
+    /** Recent replies to offer as one-tap suggestions, most used first. */
+    fun quickReplies(today: LocalDate, limit: Int = 6): Flow<List<QuickReply>> =
+        q.recentMemos(today.minus(DatePeriod(days = 30)).toString()).asFlow().mapToList(io)
+            .map { rows -> buildQuickReplies(rows.map { it.memo to it.activity_id }, limit) }
+
+    /** Synchronous version for building notifications. */
+    fun quickRepliesNow(today: LocalDate, limit: Int = 3): List<QuickReply> =
+        buildQuickReplies(
+            q.recentMemos(today.minus(DatePeriod(days = 30)).toString()).executeAsList().map { it.memo to it.activity_id },
+            limit,
+        )
 
     /** One-tap logging from a notification button: keeps any memo already written. */
     suspend fun logActivity(slot: HourSlot, activityId: String, source: EntrySource): Entry {
@@ -166,7 +223,7 @@ class JournalRepository(
         }
     }
 
-    suspend fun addActivity(name: String, icon: String = "star"): Activity = withContext(io) {
+    suspend fun addActivity(name: String, icon: String): Activity = withContext(io) {
         db.transactionWithResult {
             val t = now()
             val id = Ids.uuidV7(t)
@@ -174,6 +231,27 @@ class JournalRepository(
             q.insertActivity(id, name.trim(), null, icon, "", sort, 0, t)
             q.enqueue("activity", id, t)
             Activity(id, name.trim(), null, icon, emptyList(), sort.toInt(), isDefault = false, archived = false)
+        }
+    }
+
+    /** Renames an activity and/or changes its icon. Past entries show the new name and icon. */
+    suspend fun updateActivity(id: String, name: String, icon: String) = withContext(io) {
+        db.transaction {
+            val t = now()
+            q.updateActivity(name.trim(), icon, t, id)
+            q.enqueue("activity", id, t)
+        }
+    }
+
+    /**
+     * Removes an activity from the picker. The row is kept (archived), so entries already logged
+     * with it keep showing its name and icon.
+     */
+    suspend fun deleteActivity(id: String) = withContext(io) {
+        db.transaction {
+            val t = now()
+            q.archiveActivity(t, id)
+            q.enqueue("activity", id, t)
         }
     }
 
@@ -213,35 +291,6 @@ class JournalRepository(
             }
             q.enqueue("goal_log", id, t)
         }
-    }
-
-    companion object {
-        /** (name key, English name, icon) */
-        val DEFAULT_ACTIVITIES = listOf(
-            Triple("grind", "Grind", "bolt"),
-            Triple("snack", "Snack", "bowl"),
-            Triple("vibe", "Vibe", "headphones"),
-            Triple("study", "Study", "book"),
-            Triple("walk", "Walk", "walk"),
-            Triple("nap", "Nap", "moon"),
-            Triple("game", "Game", "gamepad"),
-            Triple("chat", "Chat", "chat"),
-        )
-
-        /** (label key, English label, kaomoji) */
-        val DEFAULT_VIBES = listOf(
-            Triple("super", "Super", "(★‿★)"),
-            Triple("solid", "Solid", "(•̀ᴗ•́)"),
-            Triple("chill", "Chill", "(￣ー￣)"),
-            Triple("tired", "Tired", "(－_－)zZ"),
-        )
-
-        /** (name key, English name, kind) */
-        val DEFAULT_RATINGS = listOf(
-            Triple("productivity", "Productivity", "STARS_5"),
-            Triple("happiness", "Happiness", "HEARTS_5"),
-            Triple("progress", "Progress", "SEGMENTS_10"),
-        )
     }
 }
 

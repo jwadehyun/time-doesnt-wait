@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import com.timedoesntwait.domain.Activity
 import com.timedoesntwait.domain.Vibe
+import com.timedoesntwait.domain.usesBuiltInName
 import com.timedoesntwait.resources.Res
 import com.timedoesntwait.resources.act_chat
 import com.timedoesntwait.resources.act_game
@@ -48,7 +49,8 @@ private val vibeKeys: Map<String, StringResource> = mapOf(
 
 /** Built-in names are translated; what the user typed is shown as-is. */
 @Composable
-fun Activity.label(): String = nameKey?.let(activityKeys::get)?.let { stringResource(it) } ?: name
+fun Activity.label(): String =
+    if (usesBuiltInName) nameKey?.let(activityKeys::get)?.let { stringResource(it) } ?: name else name
 
 @Composable
 fun Vibe.label(): String = labelKey?.let(vibeKeys::get)?.let { stringResource(it) } ?: label

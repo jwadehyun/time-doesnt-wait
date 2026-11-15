@@ -125,14 +125,27 @@ private fun MainShell(state: AppState) {
                     requestedSlot = state.logSlot,
                     onSlotChange = { state.logSlot = it },
                     onOpenPermissions = { state.push(Route.Permissions) },
+                    onSaved = { state.showInTimeline(it) },
                 )
-                Tab.TIMELINE -> TimelineScreen(onOpenSlot = { state.openQuickLog(it) })
+                Tab.TIMELINE -> TimelineScreen(
+                    date = state.timelineDate,
+                    onDateChange = {
+                        state.timelineDate = it
+                        state.timelineFocus = null
+                    },
+                    focus = state.timelineFocus,
+                    onOpenSlot = { state.openQuickLog(it) },
+                )
                 Tab.REVIEW -> ReviewPlaceholderScreen()
                 Tab.STATS -> StatsPlaceholderScreen()
             }
         }
         BottomBar(selected = state.tab, onSelect = {
             if (it == Tab.LOG && state.tab != Tab.LOG) state.logSlot = null
+            if (it == Tab.TIMELINE && state.tab != Tab.TIMELINE) {
+                state.timelineDate = null
+                state.timelineFocus = null
+            }
             state.tab = it
         })
     }

@@ -1,6 +1,8 @@
 package com.timedoesntwait.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -21,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -109,10 +112,12 @@ fun PixelText(
  * The 1-bit button: 2 dp border, hard shadow; when pressed it moves 2 dp down-right and the
  * shadow collapses.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PixelButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     filled: Boolean = false,
     enabled: Boolean = true,
     shadow: Dp = Cobalt.ShadowSmall,
@@ -138,7 +143,14 @@ fun PixelButton(
             .hardShadow(if (pressed || !enabled) 0.dp else shadow, if (danger) Cobalt.Danger else Cobalt.DeepInk)
             .background(bg)
             .inkBorder(color = if (enabled) ink else Cobalt.InkFaint)
-            .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
+            .combinedClickable(
+                interactionSource = interaction,
+                indication = null,
+                enabled = enabled,
+                role = Role.Button,
+                onLongClick = onLongClick,
+                onClick = onClick,
+            )
             .then(if (contentDescription != null) Modifier.semantics { this.contentDescription = contentDescription } else Modifier)
             .padding(contentPadding),
         horizontalArrangement = Arrangement.Center,
@@ -269,6 +281,7 @@ fun PixelTextField(
     maxLength: Int? = null,
     singleLine: Boolean = false,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
 ) {
     val type = CobaltTheme.type
     Row(
@@ -290,6 +303,7 @@ fun PixelTextField(
                 cursorBrush = SolidColor(Cobalt.Ink),
                 singleLine = singleLine,
                 keyboardOptions = keyboardOptions,
+                keyboardActions = keyboardActions,
                 modifier = Modifier.fillMaxWidth().semantics { contentDescription = placeholder },
             )
         }

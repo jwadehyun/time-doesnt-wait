@@ -1,6 +1,13 @@
 package com.timedoesntwait.ui.screens
 
 import androidx.compose.foundation.background
+import kotlinx.datetime.LocalDate
+import com.timedoesntwait.resources.tl_just_saved
+import com.timedoesntwait.resources.unknown
+import com.timedoesntwait.ui.components.ActivityIcon
+import com.timedoesntwait.domain.BuiltIns
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,6 +49,7 @@ import com.timedoesntwait.resources.tl_source_reply
 import com.timedoesntwait.resources.tl_today
 import com.timedoesntwait.resources.uncategorized
 import com.timedoesntwait.ui.components.IconSquareButton
+import com.timedoesntwait.ui.components.InkDivider
 import com.timedoesntwait.ui.components.PixelCard
 import com.timedoesntwait.ui.components.PixelIcon
 import com.timedoesntwait.ui.components.PixelText
@@ -60,20 +68,33 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
 @Composable
-fun TimelineScreen(onOpenSlot: (HourSlot) -> Unit) {
+fun TimelineScreen(
+    date: LocalDate?,
+    onDateChange: (LocalDate) -> Unit,
+    focus: HourSlot?,
+    onOpenSlot: (HourSlot) -> Unit,
+) {
     val repo = koinInject<JournalRepository>()
     val scheduleRepo = koinInject<ScheduleRepository>()
     val lang = CobaltTheme.language
     val now by rememberNow()
-    var date by remember { mutableStateOf(now.date) }
+    val day = date ?: now.date
 
-    val entries by remember(date) { repo.entriesFor(date) }.collectAsState(emptyList())
-    val activities by repo.allActivities().collectAsState(emptyList())
-    val vibes by repo.vibes().collectAsState(emptyList())
-    val schedule by scheduleRepo.schedule().collectAsState(CheckinSchedule.DEFAULT)
+    val entries by remember(day) { repo.entriesFor(day) }.collectAsState(emptyList())
+    // Includes deleted (archived) activities, so past entries keep their name and icon.
+    val activities by remember { repo.allActivities() }.collectAsState(emptyList())
+    val vibes by remember { repo.vibes() }.collectAsState(emptyList())
+    val schedule by remember { scheduleRepo.schedule() }.collectAsState(CheckinSchedule.DEFAULT)
+    val listState = rememberLazyListState()
 
-    val rows = buildTimeline(schedule, entries, activities.associateBy { it.id }, vibes.associateBy { it.id }, date, now)
-    val expected = schedule.expectedSlots(date).size
+    val rows = buildTimeline(schedule, entries, activities.associateBy { it.id }, vibes.associateBy { it.id }, day, now)
+    val expected = schedule.expectedSlots(day).size
+
+    // After a save, scroll to the hour that was just logged.
+    val focusIndex = rows.indexOfFirst { it.slot == focus && it is TimelineRow.Logged }
+    LaunchedEffect(focus, focusIndex) {
+        if (focusIndex >= 0) listState.animateScrollToItem(focusIndex)
+    }
     val loggedCount = entries.size
 
     Column(Modifier.fillMaxSize()) {
@@ -82,21 +103,21 @@ fun TimelineScreen(onOpenSlot: (HourSlot) -> Unit) {
             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconSquareButton("left", "-1", { date = date.minus(DatePeriod(days = 1)) })
+            IconSquareButton("left", "-1", { onDateChange(day.minus(DatePeriod(days = 1))) })
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                PixelText(TimeLabels.date(date, lang).uppercase(), style = CobaltTheme.type.title)
+                PixelText(TimeLabels.date(day, lang).uppercase(), style = CobaltTheme.type.title)
                 PixelText(stringResource(Res.string.tl_logged, loggedCount, expected), style = CobaltTheme.type.small)
             }
-            if (date < now.date) {
-                IconSquareButton("right", "+1", { date = date.plus(DatePeriod(days = 1)) })
+            if (day < now.date) {
+                IconSquareButton("right", "+1", { onDateChange(day.plus(DatePeriod(days = 1))) })
             } else {
                 Spacer(Modifier.width(48.dp))
             }
         }
-        if (date != now.date) {
+        if (day != now.date) {
             PixelTextButton(
                 stringResource(Res.string.tl_today),
-                { date = now.date },
+                { onDateChange(now.date) },
                 Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
             )
             Spacer(Modifier.height(8.dp))
@@ -107,6 +128,8 @@ fun TimelineScreen(onOpenSlot: (HourSlot) -> Unit) {
             if (fraction > 0f) Box(Modifier.weight(fraction).height(12.dp).background(Cobalt.Ink))
             if (fraction < 1f) Spacer(Modifier.weight(1f - fraction))
         }
+        Spacer(Modifier.height(4.dp))
+        InkDivider()
 
         if (rows.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -115,12 +138,13 @@ fun TimelineScreen(onOpenSlot: (HourSlot) -> Unit) {
         } else {
             LazyColumn(
                 Modifier.fillMaxSize(),
+                state = listState,
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 items(rows, key = { "${it.slot.date}-${it.slot.hour}" }) { row ->
                     when (row) {
-                        is TimelineRow.Logged -> LoggedRow(row, onClick = { onOpenSlot(row.slot) })
+                        is TimelineRow.Logged -> LoggedRow(row, justSaved = row.slot == focus, onClick = { onOpenSlot(row.slot) })
                         is TimelineRow.Missed -> MissedRow(row.slot, onFill = { onOpenSlot(row.slot) })
                     }
                 }
@@ -130,20 +154,34 @@ fun TimelineScreen(onOpenSlot: (HourSlot) -> Unit) {
 }
 
 @Composable
-private fun LoggedRow(row: TimelineRow.Logged, onClick: () -> Unit) {
+private fun LoggedRow(row: TimelineRow.Logged, justSaved: Boolean, onClick: () -> Unit) {
     val lang = CobaltTheme.language
     Row(Modifier.fillMaxWidth()) {
         // Rail with the activity stamp
         Box(
             Modifier.size(40.dp).hardShadow(Cobalt.ShadowSmall).background(Cobalt.Ink),
             contentAlignment = Alignment.Center,
-        ) { PixelIcon(row.activity?.icon ?: "question", size = 22.dp, color = Cobalt.Card) }
+        ) { ActivityIcon(row.activity?.icon ?: BuiltIns.UNKNOWN_ICON, size = 22.dp, color = Cobalt.Card) }
         Spacer(Modifier.width(12.dp))
-        PixelCard(Modifier.weight(1f).clickable(onClick = onClick), padding = 12.dp, shadow = Cobalt.ShadowSmall) {
+        PixelCard(
+            Modifier.weight(1f).clickable(onClick = onClick),
+            padding = 12.dp,
+            shadow = if (justSaved) Cobalt.Shadow + 2.dp else Cobalt.ShadowSmall,
+        ) {
+            if (justSaved) {
+                PixelText(stringResource(Res.string.tl_just_saved), style = CobaltTheme.type.label)
+                Spacer(Modifier.height(4.dp))
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 PixelText(TimeLabels.hourRange(row.slot.hour, lang), style = CobaltTheme.type.label, modifier = Modifier.weight(1f))
                 PixelText(
-                    "[ ${(row.activity?.label() ?: stringResource(Res.string.uncategorized)).uppercase()} ]",
+                    "[ ${
+                        when {
+                            row.activity != null -> row.activity.label()
+                            row.activityMissing -> stringResource(Res.string.unknown)
+                            else -> stringResource(Res.string.uncategorized)
+                        }.uppercase()
+                    } ]",
                     style = CobaltTheme.type.small,
                 )
             }

@@ -18,4 +18,5 @@
     <string name="act_nap">Nap</string>
     <string name="act_game">Game</string>
     <string name="act_chat">Chat</string>
+    <string name="unknown">Unknown</string>
 </resources>

@@ -62,6 +62,9 @@ sealed interface TimelineRow {
 
     data class Logged(val entry: Entry, val activity: Activity?, val vibe: Vibe?) : TimelineRow {
         override val slot: HourSlot get() = entry.slot
+
+        /** The entry points at an activity that can't be found (shown as UNKNOWN with "?"). */
+        val activityMissing: Boolean get() = entry.activityId != null && activity == null
     }
 
     data class Missed(override val slot: HourSlot) : TimelineRow
