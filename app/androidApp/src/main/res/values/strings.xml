@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Time Doesn\'t Wait</string>
+    <string name="channel_checkins">Hourly check-ins</string>
+    <string name="channel_checkins_desc">Asks what you did in the past hour, on the hour.</string>
+    <string name="channel_status">Logging status</string>
+    <string name="checkin_title">What did you do %1$s?</string>
+    <string name="checkin_text">Reply to log it. No need to open the app.</string>
+    <string name="checkin_reply">Reply</string>
+    <string name="checkin_reply_hint">What did you do?</string>
+    <string name="checkin_logged">Logged ✓ %1$s · %2$s</string>
+    <string name="uncategorized">Uncategorized</string>
+    <string name="act_grind">Grind</string>
+    <string name="act_snack">Snack</string>
+    <string name="act_vibe">Vibe</string>
+    <string name="act_study">Study</string>
+    <string name="act_walk">Walk</string>
+    <string name="act_nap">Nap</string>
+    <string name="act_game">Game</string>
+    <string name="act_chat">Chat</string>
+</resources>

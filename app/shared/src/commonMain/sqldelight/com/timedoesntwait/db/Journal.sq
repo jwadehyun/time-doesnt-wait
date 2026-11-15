@@ -1,0 +1,247 @@
+-- Every synced table carries: id (UUIDv7), updated_at (client millis), deleted_at (soft delete),
+-- server_seq (assigned by the server; NULL until the row has been synced once).
+
+CREATE TABLE activity (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    name_key TEXT,
+    icon TEXT NOT NULL,
+    keywords TEXT NOT NULL DEFAULT '',
+    sort_order INTEGER NOT NULL,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    archived INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER,
+    server_seq INTEGER
+);
+
+CREATE TABLE vibe (
+    id TEXT NOT NULL PRIMARY KEY,
+    label TEXT NOT NULL,
+    label_key TEXT,
+    kaomoji TEXT NOT NULL,
+    sort_order INTEGER NOT NULL,
+    archived INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER,
+    server_seq INTEGER
+);
+
+CREATE TABLE entry (
+    id TEXT NOT NULL PRIMARY KEY,
+    local_date TEXT NOT NULL,
+    hour INTEGER NOT NULL,
+    activity_id TEXT,
+    vibe_id TEXT,
+    memo TEXT NOT NULL DEFAULT '',
+    source TEXT NOT NULL,
+    category_guessed INTEGER NOT NULL DEFAULT 0,
+    logged_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER,
+    server_seq INTEGER
+);
+
+CREATE UNIQUE INDEX entry_slot ON entry(local_date, hour) WHERE deleted_at IS NULL;
+
+CREATE TABLE goal (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    target_hours INTEGER NOT NULL,
+    achieved INTEGER NOT NULL DEFAULT 0,
+    sort_order INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER,
+    server_seq INTEGER
+);
+
+CREATE TABLE goal_log (
+    id TEXT NOT NULL PRIMARY KEY,
+    goal_id TEXT NOT NULL,
+    local_date TEXT NOT NULL,
+    hour INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER,
+    server_seq INTEGER
+);
+
+CREATE UNIQUE INDEX goal_log_slot ON goal_log(goal_id, local_date, hour) WHERE deleted_at IS NULL;
+
+CREATE TABLE rating_dimension (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    name_key TEXT,
+    kind TEXT NOT NULL,
+    sort_order INTEGER NOT NULL,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    archived INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER,
+    server_seq INTEGER
+);
+
+CREATE TABLE daily_review (
+    id TEXT NOT NULL PRIMARY KEY,
+    local_date TEXT NOT NULL,
+    overall_rating INTEGER NOT NULL,
+    memo TEXT NOT NULL DEFAULT '',
+    saved_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER,
+    server_seq INTEGER
+);
+
+CREATE UNIQUE INDEX daily_review_date ON daily_review(local_date) WHERE deleted_at IS NULL;
+
+CREATE TABLE review_rating (
+    id TEXT NOT NULL PRIMARY KEY,
+    review_id TEXT NOT NULL,
+    dimension_id TEXT NOT NULL,
+    value INTEGER NOT NULL,
+    note TEXT,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER,
+    server_seq INTEGER
+);
+
+CREATE TABLE checkin_schedule (
+    weekday INTEGER NOT NULL PRIMARY KEY, -- ISO 1 = Monday .. 7 = Sunday
+    hours_mask INTEGER NOT NULL,          -- bit H set = ping at H:00
+    updated_at INTEGER NOT NULL,
+    server_seq INTEGER
+);
+
+-- Rows waiting to be pushed to the server. Written in the same transaction as the change.
+CREATE TABLE outbox (
+    table_name TEXT NOT NULL,
+    row_id TEXT NOT NULL,
+    queued_at INTEGER NOT NULL,
+    PRIMARY KEY (table_name, row_id)
+);
+
+-- Phone-only settings that never sync (language, onboarding state, sound, alarm diagnostics).
+CREATE TABLE local_setting (
+    key TEXT NOT NULL PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+-- ── activity ──────────────────────────────────────────────
+
+activityCount:
+SELECT count(*) FROM activity;
+
+activeActivities:
+SELECT * FROM activity WHERE archived = 0 AND deleted_at IS NULL ORDER BY sort_order, name;
+
+allActivities:
+SELECT * FROM activity WHERE deleted_at IS NULL ORDER BY sort_order, name;
+
+insertActivity:
+INSERT INTO activity(id, name, name_key, icon, keywords, sort_order, is_default, archived, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?);
+
+maxActivitySort:
+SELECT coalesce(max(sort_order), 0) FROM activity;
+
+-- Activities ranked by how often they were logged in the last N days (for quick-reply buttons).
+topActivitiesSince:
+SELECT a.* FROM activity a
+LEFT JOIN entry e ON e.activity_id = a.id AND e.deleted_at IS NULL AND e.local_date >= :sinceDate
+WHERE a.archived = 0 AND a.deleted_at IS NULL
+GROUP BY a.id
+ORDER BY count(e.id) DESC, a.sort_order
+LIMIT :limit;
+
+-- ── vibe ──────────────────────────────────────────────────
+
+activeVibes:
+SELECT * FROM vibe WHERE archived = 0 AND deleted_at IS NULL ORDER BY sort_order;
+
+insertVibe:
+INSERT INTO vibe(id, label, label_key, kaomoji, sort_order, archived, updated_at)
+VALUES (?, ?, ?, ?, ?, 0, ?);
+
+-- ── entry ─────────────────────────────────────────────────
+
+entryForSlot:
+SELECT * FROM entry WHERE local_date = ? AND hour = ? AND deleted_at IS NULL;
+
+entriesForDate:
+SELECT * FROM entry WHERE local_date = ? AND deleted_at IS NULL ORDER BY hour DESC;
+
+insertEntry:
+INSERT INTO entry(id, local_date, hour, activity_id, vibe_id, memo, source, category_guessed, logged_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateEntry:
+UPDATE entry SET activity_id = ?, vibe_id = ?, memo = ?, source = ?, category_guessed = ?, logged_at = ?, updated_at = ?
+WHERE id = ?;
+
+softDeleteEntry:
+UPDATE entry SET deleted_at = :now, updated_at = :now WHERE id = :id;
+
+-- ── goal ──────────────────────────────────────────────────
+
+goalsWithProgress:
+SELECT g.id, g.name, g.target_hours, g.achieved, g.sort_order,
+       (SELECT count(*) FROM goal_log l WHERE l.goal_id = g.id AND l.deleted_at IS NULL) AS progress
+FROM goal g
+WHERE g.deleted_at IS NULL
+ORDER BY g.achieved, g.sort_order;
+
+insertGoal:
+INSERT INTO goal(id, name, target_hours, achieved, sort_order, updated_at) VALUES (?, ?, ?, 0, ?, ?);
+
+maxGoalSort:
+SELECT coalesce(max(sort_order), 0) FROM goal;
+
+setGoalAchieved:
+UPDATE goal SET achieved = :achieved, updated_at = :now WHERE id = :id;
+
+goalLogsForSlot:
+SELECT * FROM goal_log WHERE local_date = ? AND hour = ? AND deleted_at IS NULL;
+
+goalLogFor:
+SELECT * FROM goal_log WHERE goal_id = ? AND local_date = ? AND hour = ?;
+
+insertGoalLog:
+INSERT INTO goal_log(id, goal_id, local_date, hour, updated_at) VALUES (?, ?, ?, ?, ?);
+
+restoreGoalLog:
+UPDATE goal_log SET deleted_at = NULL, updated_at = :now WHERE id = :id;
+
+softDeleteGoalLog:
+UPDATE goal_log SET deleted_at = :now, updated_at = :now WHERE id = :id;
+
+-- ── rating dimensions ─────────────────────────────────────
+
+ratingDimensionCount:
+SELECT count(*) FROM rating_dimension;
+
+insertRatingDimension:
+INSERT INTO rating_dimension(id, name, name_key, kind, sort_order, is_default, archived, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, 0, ?);
+
+-- ── schedule ──────────────────────────────────────────────
+
+scheduleRows:
+SELECT * FROM checkin_schedule ORDER BY weekday;
+
+upsertSchedule:
+INSERT OR REPLACE INTO checkin_schedule(weekday, hours_mask, updated_at) VALUES (?, ?, ?);
+
+-- ── outbox ────────────────────────────────────────────────
+
+enqueue:
+INSERT OR REPLACE INTO outbox(table_name, row_id, queued_at) VALUES (?, ?, ?);
+
+outboxCount:
+SELECT count(*) FROM outbox;
+
+-- ── local settings ────────────────────────────────────────
+
+getSetting:
+SELECT value FROM local_setting WHERE key = ?;
+
+putSetting:
+INSERT OR REPLACE INTO local_setting(key, value) VALUES (?, ?);

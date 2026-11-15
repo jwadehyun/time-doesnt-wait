@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_checkins">매시간 체크인</string>
+    <string name="channel_checkins_desc">매시 정각에 지난 한 시간 동안 뭐 했는지 물어봐요.</string>
+    <string name="channel_status">기록 상태</string>
+    <string name="checkin_title">%1$s에 뭐 했어요?</string>
+    <string name="checkin_text">답장으로 바로 기록하세요. 앱을 열 필요 없어요.</string>
+    <string name="checkin_reply">답장</string>
+    <string name="checkin_reply_hint">뭐 했어요?</string>
+    <string name="checkin_logged">기록됨 ✓ %1$s · %2$s</string>
+    <string name="uncategorized">미분류</string>
+    <string name="act_grind">업무</string>
+    <string name="act_snack">간식</string>
+    <string name="act_vibe">휴식</string>
+    <string name="act_study">공부</string>
+    <string name="act_walk">산책</string>
+    <string name="act_nap">낮잠</string>
+    <string name="act_game">게임</string>
+    <string name="act_chat">수다</string>
+</resources>

@@ -1,0 +1,33 @@
+# Local backend: PostgreSQL 16 + the Spring Boot API.
+#   docker compose up --build
+#   curl localhost:8080/api/v1/status
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: timedoesntwait
+      POSTGRES_USER: timedoesntwait
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-timedoesntwait}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U timedoesntwait -d timedoesntwait"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/timedoesntwait
+      DATABASE_USER: timedoesntwait
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-timedoesntwait}
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  db-data:

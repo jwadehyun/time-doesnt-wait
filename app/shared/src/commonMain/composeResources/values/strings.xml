@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Time Doesn't Wait</string>
+    <string name="app_tagline">Log every hour. Rate every day.</string>
+
+    <!-- Tabs -->
+    <string name="tab_log">LOG</string>
+    <string name="tab_timeline">TIMELINE</string>
+    <string name="tab_review">REVIEW</string>
+    <string name="tab_stats">STATS</string>
+
+    <!-- Common -->
+    <string name="back">Back</string>
+    <string name="profile">Profile and settings</string>
+    <string name="cancel">CANCEL</string>
+    <string name="create">CREATE</string>
+    <string name="delete">DELETE</string>
+    <string name="lang_en">EN</string>
+    <string name="lang_ko">KO</string>
+    <string name="lang_system">PHONE</string>
+    <string name="uncategorized">Uncategorized</string>
+
+    <!-- Built-in activities, vibes, ratings -->
+    <string name="act_grind">Grind</string>
+    <string name="act_snack">Snack</string>
+    <string name="act_vibe">Vibe</string>
+    <string name="act_study">Study</string>
+    <string name="act_walk">Walk</string>
+    <string name="act_nap">Nap</string>
+    <string name="act_game">Game</string>
+    <string name="act_chat">Chat</string>
+    <string name="vibe_super">Super</string>
+    <string name="vibe_solid">Solid</string>
+    <string name="vibe_chill">Chill</string>
+    <string name="vibe_tired">Tired</string>
+
+    <!-- Welcome -->
+    <string name="welcome_step">STEP %1$d/%2$d</string>
+    <string name="welcome_body">Every hour on the hour, you get one question: what did you just do? Answer straight from the notification, even on the lock screen.</string>
+    <string name="welcome_language">LANGUAGE</string>
+    <string name="welcome_start">[ START ]</string>
+    <string name="welcome_signin_later">Google and Kakao sign-in arrive with cloud sync. Everything you log now stays on this phone and syncs later.</string>
+
+    <!-- Permissions -->
+    <string name="perm_title">PERMISSIONS</string>
+    <string name="perm_intro">These keep check-ins on time and let you reply without unlocking.</string>
+    <string name="perm_notifications">Notifications</string>
+    <string name="perm_notifications_desc">Needed to show the hourly check-in.</string>
+    <string name="perm_alarms">Alarms &amp; reminders</string>
+    <string name="perm_alarms_desc">Lets check-ins fire exactly on the hour. Without it they can run up to ~10 min late.</string>
+    <string name="perm_battery">Battery optimization</string>
+    <string name="perm_battery_desc">Stops the phone from putting the app to sleep and skipping check-ins overnight.</string>
+    <string name="perm_battery_samsung">On Samsung, also add the app to “Never sleeping apps” in Battery settings.</string>
+    <string name="perm_battery_xiaomi">On Xiaomi, also turn on Autostart and set Battery saver to “No restrictions”.</string>
+    <string name="perm_lock">Lock-screen replies</string>
+    <string name="perm_lock_desc">Your lock screen must show notifications for you to reply without unlocking.</string>
+    <string name="perm_ok">OK ✓</string>
+    <string name="perm_fix">[ FIX ]</string>
+    <string name="perm_na">N/A</string>
+    <string name="perm_next">[ NEXT ]</string>
+    <string name="perm_skip">SKIP FOR NOW</string>
+    <string name="perm_banner_alarms">Check-ins may run late. Allow “Alarms &amp; reminders”.</string>
+    <string name="perm_banner_notifications">Check-ins are blocked. Turn notifications on.</string>
+    <string name="perm_banner_late">Your last check-in was %1$d min late. Turn off battery optimization for this app.</string>
+
+    <!-- Check-in hours -->
+    <string name="ch_title">CHECK-IN HOURS</string>
+    <string name="ch_subtitle">Tap hours to toggle pings. Each ping asks about the hour before it.</string>
+    <string name="ch_day_pings">%1$d ON / %2$d OFF</string>
+    <string name="ch_ping_legend">PING ■</string>
+    <string name="ch_quiet_legend">QUIET □</string>
+    <string name="ch_presets">PRESETS</string>
+    <string name="ch_preset_default">DAY 9–20</string>
+    <string name="ch_preset_work">WORK 9–18</string>
+    <string name="ch_preset_awake">AWAKE 8–23</string>
+    <string name="ch_clear">CLEAR</string>
+    <string name="ch_copy_weekdays">COPY → WEEKDAYS</string>
+    <string name="ch_copy_weekend">COPY → WEEKEND</string>
+    <string name="ch_overview">WEEKLY OVERVIEW</string>
+    <string name="ch_pings">%1$d pings</string>
+    <string name="ch_save">[ SAVE SCHEDULE ★ ]</string>
+    <string name="ch_saved">Saved ✓</string>
+    <string name="ch_next_ping">NEXT PING: %1$s</string>
+    <string name="ch_no_pings">NO PINGS SCHEDULED</string>
+
+    <!-- Quick log -->
+    <string name="ql_header">%1$s CHECK-IN</string>
+    <string name="ql_question">What did you do %1$s?</string>
+    <string name="ql_logged_already">Already logged. Saving replaces it.</string>
+    <string name="ql_activity">[+] ACTIVITY</string>
+    <string name="ql_single_choice">TAP AGAIN TO CLEAR</string>
+    <string name="ql_add">ADD</string>
+    <string name="ql_vibe">VIBE</string>
+    <string name="ql_goals">GOALS</string>
+    <string name="ql_goal_progress">%1$d / %2$d HR</string>
+    <string name="ql_goal_plus">+1 HR</string>
+    <string name="ql_goal_new">+ NEW GOAL</string>
+    <string name="ql_goal_achieved">ACHIEVED ★</string>
+    <string name="ql_goal_mark_achieved">MARK ACHIEVED</string>
+    <string name="ql_memo_hint">What happened this hour?</string>
+    <string name="ql_save">[ ★ SAVE LOG ★ ]</string>
+    <string name="ql_saved">Logged ✓ %1$s</string>
+    <string name="ql_new_activity">NEW ACTIVITY</string>
+    <string name="ql_activity_name">Name</string>
+    <string name="ql_new_goal">NEW GOAL</string>
+    <string name="ql_goal_name">Goal name</string>
+    <string name="ql_goal_target">Target hours</string>
+
+    <!-- Timeline -->
+    <string name="tl_logged">LOGGED %1$d / %2$d</string>
+    <string name="tl_not_logged">Not logged</string>
+    <string name="tl_fill_in">[ FILL IN ]</string>
+    <string name="tl_empty">No check-ins scheduled for this day.</string>
+    <string name="tl_today">TODAY</string>
+    <string name="tl_guessed">GUESSED</string>
+    <string name="tl_source_reply">via notification</string>
+
+    <!-- Review / stats (M2) -->
+    <string name="review_title">DAILY REVIEW</string>
+    <string name="stats_title">STATS</string>
+    <string name="coming_next">Arrives in the next build. Your hourly logs are already being saved for it.</string>
+    <string name="hours_logged_today">HOURS LOGGED TODAY</string>
+
+    <!-- Settings -->
+    <string name="settings_title">SETTINGS</string>
+    <string name="settings_notifications">// NOTIFICATIONS</string>
+    <string name="settings_checkin_hours">Check-in hours</string>
+    <string name="settings_checkin_hours_desc">Mon–Sun, custom</string>
+    <string name="settings_quick_reply">Quick-reply buttons</string>
+    <string name="settings_quick_reply_desc">Your top 2 activities</string>
+    <string name="settings_review_reminder">Daily review reminder</string>
+    <string name="settings_language">// LANGUAGE</string>
+    <string name="settings_permissions">// PERMISSIONS</string>
+    <string name="settings_review_permissions">[ REVIEW PERMISSIONS → ]</string>
+    <string name="settings_data">// DATA</string>
+    <string name="settings_unsynced">%1$d changes waiting to sync</string>
+    <string name="settings_sync_later">Cloud sync and sign-in arrive in a later build.</string>
+    <string name="settings_version">VERSION %1$s</string>
+</resources>

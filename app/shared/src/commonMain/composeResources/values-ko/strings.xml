@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Time Doesn't Wait</string>
+    <string name="app_tagline">매시간 기록하고, 매일 돌아보기.</string>
+
+    <!-- Tabs -->
+    <string name="tab_log">기록</string>
+    <string name="tab_timeline">타임라인</string>
+    <string name="tab_review">리뷰</string>
+    <string name="tab_stats">통계</string>
+
+    <!-- Common -->
+    <string name="back">뒤로</string>
+    <string name="profile">프로필 및 설정</string>
+    <string name="cancel">취소</string>
+    <string name="create">만들기</string>
+    <string name="delete">삭제</string>
+    <string name="lang_en">EN</string>
+    <string name="lang_ko">KO</string>
+    <string name="lang_system">휴대폰</string>
+    <string name="uncategorized">미분류</string>
+
+    <!-- Built-in activities, vibes, ratings -->
+    <string name="act_grind">업무</string>
+    <string name="act_snack">간식</string>
+    <string name="act_vibe">휴식</string>
+    <string name="act_study">공부</string>
+    <string name="act_walk">산책</string>
+    <string name="act_nap">낮잠</string>
+    <string name="act_game">게임</string>
+    <string name="act_chat">수다</string>
+    <string name="vibe_super">최고</string>
+    <string name="vibe_solid">좋음</string>
+    <string name="vibe_chill">느긋</string>
+    <string name="vibe_tired">피곤</string>
+
+    <!-- Welcome -->
+    <string name="welcome_step">%1$d/%2$d 단계</string>
+    <string name="welcome_body">매시 정각에 질문 하나: 방금 뭐 했어요? 알림에서 바로 답하세요. 잠금 화면에서도 돼요.</string>
+    <string name="welcome_language">언어</string>
+    <string name="welcome_start">[ 시작 ]</string>
+    <string name="welcome_signin_later">Google·카카오 로그인은 클라우드 동기화와 함께 추가돼요. 지금 기록한 내용은 이 휴대폰에 저장되고 나중에 동기화돼요.</string>
+
+    <!-- Permissions -->
+    <string name="perm_title">권한 설정</string>
+    <string name="perm_intro">알림이 제시간에 오고, 잠금을 풀지 않고도 답할 수 있게 해 줘요.</string>
+    <string name="perm_notifications">알림</string>
+    <string name="perm_notifications_desc">매시간 체크인 알림을 보여 주려면 필요해요.</string>
+    <string name="perm_alarms">알람 및 리마인더</string>
+    <string name="perm_alarms_desc">정각에 정확히 알림이 오게 해요. 없으면 최대 10분 정도 늦을 수 있어요.</string>
+    <string name="perm_battery">배터리 최적화</string>
+    <string name="perm_battery_desc">밤사이 앱이 잠들어 체크인을 건너뛰지 않게 해요.</string>
+    <string name="perm_battery_samsung">삼성 휴대폰은 배터리 설정에서 “절대 절전 상태로 전환하지 않을 앱”에도 추가해 주세요.</string>
+    <string name="perm_battery_xiaomi">샤오미 휴대폰은 자동 시작을 켜고 배터리 절약을 “제한 없음”으로 설정해 주세요.</string>
+    <string name="perm_lock">잠금 화면 답장</string>
+    <string name="perm_lock_desc">잠금을 풀지 않고 답하려면 잠금 화면에 알림이 보이도록 설정해야 해요.</string>
+    <string name="perm_ok">완료 ✓</string>
+    <string name="perm_fix">[ 설정 ]</string>
+    <string name="perm_na">해당 없음</string>
+    <string name="perm_next">[ 다음 ]</string>
+    <string name="perm_skip">나중에 하기</string>
+    <string name="perm_banner_alarms">체크인이 늦을 수 있어요. “알람 및 리마인더”를 허용해 주세요.</string>
+    <string name="perm_banner_notifications">체크인 알림이 꺼져 있어요. 알림을 켜 주세요.</string>
+    <string name="perm_banner_late">마지막 체크인이 %1$d분 늦었어요. 이 앱의 배터리 최적화를 꺼 주세요.</string>
+
+    <!-- Check-in hours -->
+    <string name="ch_title">알림 시간</string>
+    <string name="ch_subtitle">시간을 눌러 알림을 켜고 끄세요. 각 알림은 직전 한 시간을 물어봐요.</string>
+    <string name="ch_day_pings">켜짐 %1$d / 꺼짐 %2$d</string>
+    <string name="ch_ping_legend">알림 ■</string>
+    <string name="ch_quiet_legend">조용히 □</string>
+    <string name="ch_presets">프리셋</string>
+    <string name="ch_preset_default">하루 9–20</string>
+    <string name="ch_preset_work">근무 9–18</string>
+    <string name="ch_preset_awake">기상 8–23</string>
+    <string name="ch_clear">모두 끄기</string>
+    <string name="ch_copy_weekdays">복사 → 평일</string>
+    <string name="ch_copy_weekend">복사 → 주말</string>
+    <string name="ch_overview">주간 한눈에 보기</string>
+    <string name="ch_pings">%1$d회</string>
+    <string name="ch_save">[ 저장 ★ ]</string>
+    <string name="ch_saved">저장됨 ✓</string>
+    <string name="ch_next_ping">다음 알림: %1$s</string>
+    <string name="ch_no_pings">예정된 알림 없음</string>
+
+    <!-- Quick log -->
+    <string name="ql_header">%1$s 체크인</string>
+    <string name="ql_question">%1$s에 뭐 했어요?</string>
+    <string name="ql_logged_already">이미 기록했어요. 저장하면 바뀌어요.</string>
+    <string name="ql_activity">[+] 활동</string>
+    <string name="ql_single_choice">다시 누르면 해제</string>
+    <string name="ql_add">추가</string>
+    <string name="ql_vibe">기분</string>
+    <string name="ql_goals">목표</string>
+    <string name="ql_goal_progress">%1$d / %2$d시간</string>
+    <string name="ql_goal_plus">+1시간</string>
+    <string name="ql_goal_new">+ 새 목표</string>
+    <string name="ql_goal_achieved">달성 ★</string>
+    <string name="ql_goal_mark_achieved">달성 표시</string>
+    <string name="ql_memo_hint">이 시간에 무슨 일이 있었나요?</string>
+    <string name="ql_save">[ ★ 기록 저장 ★ ]</string>
+    <string name="ql_saved">기록됨 ✓ %1$s</string>
+    <string name="ql_new_activity">새 활동</string>
+    <string name="ql_activity_name">이름</string>
+    <string name="ql_new_goal">새 목표</string>
+    <string name="ql_goal_name">목표 이름</string>
+    <string name="ql_goal_target">목표 시간</string>
+
+    <!-- Timeline -->
+    <string name="tl_logged">기록 %1$d / %2$d</string>
+    <string name="tl_not_logged">기록 안 함</string>
+    <string name="tl_fill_in">[ 채우기 ]</string>
+    <string name="tl_empty">이 날은 예정된 체크인이 없어요.</string>
+    <string name="tl_today">오늘</string>
+    <string name="tl_guessed">자동 분류</string>
+    <string name="tl_source_reply">알림에서 기록</string>
+
+    <!-- Review / stats (M2) -->
+    <string name="review_title">하루 리뷰</string>
+    <string name="stats_title">통계</string>
+    <string name="coming_next">다음 빌드에서 추가돼요. 매시간 기록은 이미 저장되고 있어요.</string>
+    <string name="hours_logged_today">오늘 기록한 시간</string>
+
+    <!-- Settings -->
+    <string name="settings_title">설정</string>
+    <string name="settings_notifications">// 알림</string>
+    <string name="settings_checkin_hours">알림 시간</string>
+    <string name="settings_checkin_hours_desc">월–일, 요일별 설정</string>
+    <string name="settings_quick_reply">빠른 답장 버튼</string>
+    <string name="settings_quick_reply_desc">가장 많이 쓴 활동 2개</string>
+    <string name="settings_review_reminder">하루 리뷰 알림</string>
+    <string name="settings_language">// 언어</string>
+    <string name="settings_permissions">// 권한</string>
+    <string name="settings_review_permissions">[ 권한 확인 → ]</string>
+    <string name="settings_data">// 데이터</string>
+    <string name="settings_unsynced">동기화 대기 중인 변경 %1$d개</string>
+    <string name="settings_sync_later">클라우드 동기화와 로그인은 다음 빌드에서 추가돼요.</string>
+    <string name="settings_version">버전 %1$s</string>
+</resources>
