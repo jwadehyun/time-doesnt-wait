@@ -282,6 +282,8 @@ fun PixelTextField(
     singleLine: Boolean = false,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
+    /** Applied to the editable text itself, e.g. a FocusRequester. */
+    fieldModifier: Modifier = Modifier,
 ) {
     val type = CobaltTheme.type
     Row(
@@ -304,7 +306,7 @@ fun PixelTextField(
                 singleLine = singleLine,
                 keyboardOptions = keyboardOptions,
                 keyboardActions = keyboardActions,
-                modifier = Modifier.fillMaxWidth().semantics { contentDescription = placeholder },
+                modifier = fieldModifier.fillMaxWidth().semantics { contentDescription = placeholder },
             )
         }
         if (maxLength != null) {

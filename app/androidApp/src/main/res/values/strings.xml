@@ -5,7 +5,7 @@
     <string name="channel_checkins_desc">Asks what you did in the past hour, on the hour.</string>
     <string name="channel_status">Logging status</string>
     <string name="checkin_title">What did you do %1$s?</string>
-    <string name="checkin_text">Reply to log it. No need to open the app.</string>
+    <string name="checkin_text">Tap to type what you did, or reply below.</string>
     <string name="checkin_reply">Reply</string>
     <string name="checkin_reply_hint">What did you do?</string>
     <string name="checkin_logged">Logged ✓ %1$s · %2$s</string>

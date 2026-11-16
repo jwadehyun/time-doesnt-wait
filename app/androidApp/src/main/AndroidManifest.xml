@@ -28,6 +28,17 @@
             </intent-filter>
         </activity>
 
+        <!-- Small typing window opened by tapping a check-in notification. Its own task, so it
+             appears over whatever app was open and never drags the main app along. -->
+        <activity
+            android:name=".checkin.QuickReplyActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:taskAffinity="com.timedoesntwait.quickreply"
+            android:theme="@style/Theme.TimeDoesntWait.QuickReply"
+            android:windowSoftInputMode="adjustResize|stateAlwaysVisible" />
+
         <!-- Fires at each check-in time, posts the notification and schedules the next one. -->
         <receiver
             android:name=".checkin.CheckinAlarmReceiver"

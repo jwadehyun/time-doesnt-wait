@@ -154,4 +154,6 @@
     <string name="ql_delete_confirm">한 번 더 누르면 삭제</string>
     <string name="ql_delete_note">이미 기록한 시간에는 계속 표시돼요.</string>
     <string name="tl_just_saved">✓ 방금 저장됨</string>
+    <string name="qr_more_details">자세히 기록 →</string>
+    <string name="qr_logged">기록됨 ✓</string>
 </resources>

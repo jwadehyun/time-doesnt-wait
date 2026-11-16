@@ -154,4 +154,6 @@
     <string name="ql_delete_confirm">TAP AGAIN TO DELETE</string>
     <string name="ql_delete_note">Hours you already logged keep showing it.</string>
     <string name="tl_just_saved">✓ JUST SAVED</string>
+    <string name="qr_more_details">MORE DETAILS →</string>
+    <string name="qr_logged">Logged ✓</string>
 </resources>

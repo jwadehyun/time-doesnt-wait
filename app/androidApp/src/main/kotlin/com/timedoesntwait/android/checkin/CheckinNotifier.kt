@@ -9,7 +9,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.RemoteInput
 import com.timedoesntwait.android.AndroidPlatform
-import com.timedoesntwait.android.MainActivity
 import com.timedoesntwait.android.R
 import com.timedoesntwait.data.JournalRepository
 import com.timedoesntwait.domain.Activity
@@ -89,6 +88,7 @@ class CheckinNotifier(
             .setColor(INK)
             .setContentTitle(c.getString(R.string.checkin_title, range))
             .setContentText(c.getString(R.string.checkin_text))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(c.getString(R.string.checkin_text)))
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -150,12 +150,13 @@ class CheckinNotifier(
         return PendingIntent.getBroadcast(context, code, intent, flags)
     }
 
+    /** Tapping the notification opens the quick-reply window (type + send), not the whole app. */
     private fun openAppIntent(slot: HourSlot): PendingIntent {
-        val intent = Intent(context, MainActivity::class.java)
-            .setAction(MainActivity.ACTION_OPEN_SLOT)
+        val intent = Intent(context, QuickReplyActivity::class.java)
+            .setAction(ACTION_QUICK_REPLY)
             .putExtra(EXTRA_DATE, slot.date.toString())
             .putExtra(EXTRA_HOUR, slot.hour)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         return PendingIntent.getActivity(
             context,
             notificationId(slot),
@@ -179,6 +180,7 @@ class CheckinNotifier(
     companion object {
         const val CHANNEL_CHECKINS = "checkins"
         const val CHANNEL_STATUS = "status"
+        const val ACTION_QUICK_REPLY = "com.timedoesntwait.action.QUICK_REPLY"
         const val EXTRA_DATE = "slot_date"
         const val EXTRA_HOUR = "slot_hour"
         private const val INK = 0xFF1B3693.toInt()
