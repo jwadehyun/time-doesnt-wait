@@ -1,7 +1,7 @@
 # Time Doesn't Wait
 
 Every hour on the hour your phone asks one question: *what did you just do?* Answer from the
-notification, rate the day at bedtime. English + Korean, Halftone Cobalt 1-Bit design.
+notification, rate the day at bedtime. English + Korean, design inspired by the y2k look
 
 - Design doc: https://claude.ai/artifact/4iQ1qSwZ9uWnru9QsLywxA
 - Stitch project: "Y2K Hourly Activity Journal"
