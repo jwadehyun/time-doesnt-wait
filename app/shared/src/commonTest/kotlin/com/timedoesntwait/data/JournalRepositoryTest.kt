@@ -160,15 +160,11 @@ class JournalRepositoryTest {
     }
 
     @Test
-    fun quickRepliesAndReuse() = runTest {
+    fun sameTextReusesItsLastActivity() = runTest {
         val chat = repo.activities().first().first { it.nameKey == "chat" }
         // Logged once with a hand-picked activity the guesser wouldn't choose.
         repo.saveFromApp(HourSlot(day, 9), chat.id, null, "standup", emptySet(), EntrySource.APP)
-        repo.logText(HourSlot(day, 10), "lunch", EntrySource.APP)
-        repo.logText(HourSlot(day, 11), "Lunch", EntrySource.APP)
-        val replies = repo.quickReplies(day).first()
-        assertEquals(listOf("lunch", "standup"), replies.map { it.text.lowercase() }, "most used first, case-merged")
-        // Sending the same text again reuses the activity it was logged with last time.
-        assertEquals(chat.id, repo.logText(HourSlot(day, 12), "standup", EntrySource.NOTIFICATION_REPLY).activityId)
+        // Typing the same text again reuses that activity.
+        assertEquals(chat.id, repo.logText(HourSlot(day, 12), "Standup", EntrySource.NOTIFICATION_REPLY).activityId)
     }
 }

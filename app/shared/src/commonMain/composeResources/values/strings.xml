@@ -142,7 +142,6 @@
     <string name="unknown">Unknown</string>
     <string name="ql_quick_hint">Type what you did, then send</string>
     <string name="ql_send">Send</string>
-    <string name="ql_recent">RECENT</string>
     <string name="ql_details">OR ADD DETAILS</string>
     <string name="ql_hold_to_edit">HOLD TO EDIT</string>
     <string name="ql_edit">[ EDIT ]</string>

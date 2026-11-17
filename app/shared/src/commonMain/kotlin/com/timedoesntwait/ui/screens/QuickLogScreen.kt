@@ -2,7 +2,6 @@ package com.timedoesntwait.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,7 +40,6 @@ import com.timedoesntwait.domain.EntrySource
 import com.timedoesntwait.domain.Goal
 import com.timedoesntwait.domain.HourSlot
 import com.timedoesntwait.domain.MEMO_MAX_LENGTH
-import com.timedoesntwait.domain.QuickReply
 import com.timedoesntwait.domain.TimeLabels
 import com.timedoesntwait.domain.Vibe
 import com.timedoesntwait.domain.currentSlot
@@ -74,7 +72,6 @@ import com.timedoesntwait.resources.ql_logged_already
 import com.timedoesntwait.resources.ql_new_goal
 import com.timedoesntwait.resources.ql_question
 import com.timedoesntwait.resources.ql_quick_hint
-import com.timedoesntwait.resources.ql_recent
 import com.timedoesntwait.resources.ql_save
 import com.timedoesntwait.resources.ql_send
 import com.timedoesntwait.resources.ql_vibe
@@ -105,7 +102,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
 /**
- * The Log tab. Top: a message-style composer (type + send, or tap a recent reply) that logs the
+ * The Log tab. Top: a message-style composer (type + send) that logs the
  * hour without choosing anything else. Below: optional details (activity, vibe, goals).
  * Saving either way jumps to the Timeline via [onSaved].
  */
@@ -127,7 +124,6 @@ fun QuickLogScreen(
     val activities by remember { repo.activities() }.collectAsState(emptyList())
     val vibes by remember { repo.vibes() }.collectAsState(emptyList())
     val goals by remember { repo.goals() }.collectAsState(emptyList())
-    val quickReplies by remember(now.date) { repo.quickReplies(now.date) }.collectAsState(emptyList())
     val permissions by platform.permissions.collectAsState()
     val lateness by remember { settings.lastAlarmLatenessFlow() }.collectAsState(0)
 
@@ -234,12 +230,6 @@ fun QuickLogScreen(
                     onClick = { if (memo.isNotBlank()) save() },
                     filled = memo.isNotBlank(),
                 )
-            }
-            if (quickReplies.isNotEmpty()) {
-                Spacer(Modifier.height(12.dp))
-                PixelText(stringResource(Res.string.ql_recent), style = CobaltTheme.type.small)
-                Spacer(Modifier.height(6.dp))
-                QuickReplyChips(quickReplies) { reply -> save(reply.text) }
             }
         }
 
@@ -360,23 +350,6 @@ private fun HeaderArrow(icon: String, enabled: Boolean = true, onClick: () -> Un
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { PixelIcon(icon, size = 18.dp, color = if (enabled) Cobalt.Card else Cobalt.DeepInk) }
-}
-
-/** Recent replies as one-tap chips, like smart replies in a messaging app. Tapping one logs it. */
-@Composable
-private fun QuickReplyChips(replies: List<QuickReply>, onPick: (QuickReply) -> Unit) {
-    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        replies.forEach { reply ->
-            PixelButton(
-                onClick = { onPick(reply) },
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                contentDescription = reply.text,
-            ) { fg ->
-                PixelText(reply.text, style = CobaltTheme.type.user, color = fg, maxLines = 1)
-            }
-        }
-        Spacer(Modifier.width(4.dp)) // room for the last chip's shadow
-    }
 }
 
 @Composable

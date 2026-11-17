@@ -5,8 +5,6 @@ import app.cash.sqldelight.coroutines.mapToList
 import com.timedoesntwait.db.AppDatabase
 import com.timedoesntwait.domain.Activity
 import com.timedoesntwait.domain.BuiltIns
-import com.timedoesntwait.domain.QuickReply
-import com.timedoesntwait.domain.buildQuickReplies
 import com.timedoesntwait.domain.CategoryGuesser
 import com.timedoesntwait.domain.Entry
 import com.timedoesntwait.domain.EntrySource
@@ -196,18 +194,6 @@ class JournalRepository(
             ?.activity_id
         reused ?: CategoryGuesser(active).guess(text)?.id
     }
-
-    /** Recent replies to offer as one-tap suggestions, most used first. */
-    fun quickReplies(today: LocalDate, limit: Int = 6): Flow<List<QuickReply>> =
-        q.recentMemos(today.minus(DatePeriod(days = 30)).toString()).asFlow().mapToList(io)
-            .map { rows -> buildQuickReplies(rows.map { it.memo to it.activity_id }, limit) }
-
-    /** Synchronous version for building notifications. */
-    fun quickRepliesNow(today: LocalDate, limit: Int = 3): List<QuickReply> =
-        buildQuickReplies(
-            q.recentMemos(today.minus(DatePeriod(days = 30)).toString()).executeAsList().map { it.memo to it.activity_id },
-            limit,
-        )
 
     /** One-tap logging from a notification button: keeps any memo already written. */
     suspend fun logActivity(slot: HourSlot, activityId: String, source: EntrySource): Entry {

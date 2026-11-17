@@ -2,12 +2,9 @@ package com.timedoesntwait.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -19,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
@@ -56,7 +52,6 @@ import com.timedoesntwait.resources.ql_send
 import com.timedoesntwait.resources.qr_logged
 import com.timedoesntwait.resources.qr_more_details
 import com.timedoesntwait.ui.components.IconSquareButton
-import com.timedoesntwait.ui.components.PixelButton
 import com.timedoesntwait.ui.components.PixelText
 import com.timedoesntwait.ui.components.PixelTextField
 import com.timedoesntwait.ui.components.hardShadow
@@ -70,7 +65,7 @@ import org.koin.compose.koinInject
 
 /**
  * The small "message" window that opens when a check-in notification is tapped: type what you did
- * (keyboard already up) or tap a recent reply, and send. No other choices needed.
+ * (keyboard already up) and send. No other choices needed.
  * Hosts its own theme so a platform can show it on its own, outside the main app screen.
  */
 @Composable
@@ -99,7 +94,6 @@ private fun PopupContent(
     val repo = koinInject<JournalRepository>()
     val scope = rememberCoroutineScope()
     val lang = CobaltTheme.language
-    val replies by remember { repo.quickReplies(slot.date) }.collectAsState(emptyList())
     var text by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
     var done by remember { mutableStateOf(false) }
@@ -183,19 +177,6 @@ private fun PopupContent(
                         onClick = { send(text) },
                         filled = text.isNotBlank(),
                     )
-                }
-                if (replies.isNotEmpty()) {
-                    Spacer(Modifier.height(12.dp))
-                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        replies.forEach { reply ->
-                            PixelButton(
-                                onClick = { send(reply.text) },
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                                contentDescription = reply.text,
-                            ) { fg -> PixelText(reply.text, style = CobaltTheme.type.user, color = fg, maxLines = 1) }
-                        }
-                        Spacer(Modifier.width(4.dp))
-                    }
                 }
                 Spacer(Modifier.height(8.dp))
                 PixelText(

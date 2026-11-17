@@ -184,7 +184,7 @@ updateEntry:
 UPDATE entry SET activity_id = ?, vibe_id = ?, memo = ?, source = ?, category_guessed = ?, logged_at = ?, updated_at = ?
 WHERE id = ?;
 
--- Recent typed replies, newest first, for quick-reply suggestions.
+-- Recent typed replies, newest first: typing the same text again reuses its last activity.
 recentMemos:
 SELECT memo, activity_id, logged_at FROM entry
 WHERE deleted_at IS NULL AND memo != '' AND local_date >= :sinceDate

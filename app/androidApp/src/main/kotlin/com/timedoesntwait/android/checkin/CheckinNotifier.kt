@@ -56,12 +56,8 @@ class CheckinNotifier(
         val lang = platform.language.value
         val range = TimeLabels.hourRange(slot.hour, lang)
 
-        // Recent replies appear as tap-to-send chips under the reply box, like quick responses in Messages.
-        val choices = journal.quickRepliesNow(slot.date, limit = 3).map { it.text }.toTypedArray<CharSequence>()
         val remoteInput = RemoteInput.Builder(CheckinReplyReceiver.KEY_REPLY_TEXT)
             .setLabel(c.getString(R.string.checkin_reply_hint))
-            .setChoices(choices)
-            .setAllowFreeFormInput(true)
             .build()
         val replyAction = NotificationCompat.Action.Builder(
             R.drawable.ic_stat_checkin,
