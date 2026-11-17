@@ -11,7 +11,15 @@ object BuiltIns {
         Triple("walk", "Walk", "walk"),
         Triple("nap", "Nap", "moon"),
         Triple("game", "Game", "gamepad"),
-        Triple("chat", "Chat", "chat"),
+        Triple("workout", "Work out", "dumbbell"),
+    )
+
+    /**
+     * Built-ins no longer seeded. Existing installs keep the row (archived if untouched) so past
+     * hours still show it, translated.
+     */
+    val RETIRED_ACTIVITIES = listOf(
+        Triple("chat", "Chat", "chat"), // replaced by "workout" (2026-11-17)
     )
 
     /** (label key, English label, kaomoji) */
@@ -39,4 +47,9 @@ object BuiltIns {
  * (nameKey) still helps category guessing.
  */
 val Activity.usesBuiltInName: Boolean
-    get() = nameKey != null && BuiltIns.ACTIVITIES.any { it.first == nameKey && it.second == name }
+    get() = nameKey != null &&
+        (BuiltIns.ACTIVITIES + BuiltIns.RETIRED_ACTIVITIES).any { it.first == nameKey && it.second == name }
+
+/** Same rule for built-in vibes (Super / 최고). */
+val Vibe.usesBuiltInLabel: Boolean
+    get() = labelKey != null && BuiltIns.VIBES.any { it.first == labelKey && it.second == label }

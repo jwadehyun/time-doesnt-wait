@@ -8,7 +8,10 @@ import android.os.Build
 import android.util.Log
 import com.timedoesntwait.data.ScheduleRepository
 import com.timedoesntwait.data.SettingsRepository
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.plus
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
@@ -26,9 +29,44 @@ class CheckinScheduler(
 ) {
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
 
+    /** Rebuilds both alarms: the next check-in and the evening review reminder. */
     fun scheduleIfOnboarded() {
-        if (settings.onboardingDone) scheduleNext() else cancel()
+        if (settings.onboardingDone) {
+            scheduleNext()
+            scheduleReviewReminder()
+        } else {
+            cancel()
+            alarmManager.cancel(reviewPendingIntent())
+        }
     }
+
+    /** The daily-review reminder: its own alarm at the chosen hour (default 22:00), or none when off. */
+    fun scheduleReviewReminder() {
+        val hour = settings.reviewReminderHour
+        val pending = reviewPendingIntent()
+        if (hour == null) {
+            alarmManager.cancel(pending)
+            return
+        }
+        val zone = TimeZone.currentSystemDefault()
+        val now = Clock.System.now().toLocalDateTime(zone)
+        val today = LocalDateTime(now.date, LocalTime(hour, 0))
+        val next = if (today > now) today else LocalDateTime(now.date.plus(DatePeriod(days = 1)), LocalTime(hour, 0))
+        val triggerAt = next.toInstant(zone).toEpochMilliseconds()
+        if (canScheduleExact()) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pending)
+        } else {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pending)
+        }
+        Log.i(TAG, "Next review reminder at $next")
+    }
+
+    private fun reviewPendingIntent(): PendingIntent = PendingIntent.getBroadcast(
+        context,
+        REQUEST_REVIEW,
+        Intent(context, ReviewReminderReceiver::class.java).setAction(ReviewReminderReceiver.ACTION_REVIEW_REMINDER),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
 
     fun scheduleNext() {
         val zone = TimeZone.currentSystemDefault()
@@ -70,6 +108,7 @@ class CheckinScheduler(
     companion object {
         private const val TAG = "CheckinScheduler"
         private const val REQUEST_PING = 1
+        private const val REQUEST_REVIEW = 2
 
         fun pingTime(epochMillis: Long): LocalDateTime =
             kotlin.time.Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(TimeZone.currentSystemDefault())

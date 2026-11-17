@@ -44,9 +44,13 @@ import com.timedoesntwait.ui.components.PixelText
 import com.timedoesntwait.ui.screens.CheckinHoursScreen
 import com.timedoesntwait.ui.screens.PermissionsScreen
 import com.timedoesntwait.ui.screens.QuickLogScreen
-import com.timedoesntwait.ui.screens.ReviewPlaceholderScreen
+import com.timedoesntwait.ui.screens.ActivitiesEditorScreen
+import com.timedoesntwait.ui.screens.GoalsEditorScreen
+import com.timedoesntwait.ui.screens.RatingsEditorScreen
+import com.timedoesntwait.ui.screens.ReviewScreen
+import com.timedoesntwait.ui.screens.StatsScreen
+import com.timedoesntwait.ui.screens.VibesEditorScreen
 import com.timedoesntwait.ui.screens.SettingsScreen
-import com.timedoesntwait.ui.screens.StatsPlaceholderScreen
 import com.timedoesntwait.ui.screens.TimelineScreen
 import com.timedoesntwait.ui.screens.WelcomeScreen
 import com.timedoesntwait.ui.theme.Cobalt
@@ -90,7 +94,15 @@ fun App(state: AppState) {
                     onBack = { state.back() },
                     onCheckinHours = { state.push(Route.CheckinHours) },
                     onPermissions = { state.push(Route.Permissions) },
+                    onEditActivities = { state.push(Route.EditActivities) },
+                    onEditVibes = { state.push(Route.EditVibes) },
+                    onEditGoals = { state.push(Route.EditGoals) },
+                    onEditRatings = { state.push(Route.EditRatings) },
                 )
+                Route.EditActivities -> ActivitiesEditorScreen(onBack = { state.back() })
+                Route.EditVibes -> VibesEditorScreen(onBack = { state.back() })
+                Route.EditGoals -> GoalsEditorScreen(onBack = { state.back() })
+                Route.EditRatings -> RatingsEditorScreen(onBack = { state.back() })
                 Route.CheckinHours -> CheckinHoursScreen(
                     setupStep = null,
                     onBack = { state.back() },
@@ -136,12 +148,25 @@ private fun MainShell(state: AppState) {
                     focus = state.timelineFocus,
                     onOpenSlot = { state.openQuickLog(it) },
                 )
-                Tab.REVIEW -> ReviewPlaceholderScreen()
-                Tab.STATS -> StatsPlaceholderScreen()
+                Tab.REVIEW -> key(state.reviewOpenCount) {
+                    ReviewScreen(
+                        requestedDate = state.reviewDate,
+                        onDateChange = { state.reviewDate = it },
+                        onOpenTimeline = { state.openTimeline(it) },
+                    )
+                }
+                Tab.STATS -> StatsScreen(
+                    period = state.statsPeriod,
+                    anchor = state.statsAnchor,
+                    onPeriodChange = { state.statsPeriod = it },
+                    onAnchorChange = { state.statsAnchor = it },
+                    onOpenDay = { state.openTimeline(it) },
+                )
             }
         }
         BottomBar(selected = state.tab, onSelect = {
             if (it == Tab.LOG && state.tab != Tab.LOG) state.logSlot = null
+            if (it == Tab.REVIEW && state.tab != Tab.REVIEW) state.reviewDate = null
             if (it == Tab.TIMELINE && state.tab != Tab.TIMELINE) {
                 state.timelineDate = null
                 state.timelineFocus = null

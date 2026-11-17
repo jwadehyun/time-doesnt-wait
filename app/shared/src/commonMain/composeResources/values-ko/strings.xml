@@ -29,6 +29,7 @@
     <string name="act_nap">낮잠</string>
     <string name="act_game">게임</string>
     <string name="act_chat">수다</string>
+    <string name="act_workout">운동</string>
     <string name="vibe_super">최고</string>
     <string name="vibe_solid">좋음</string>
     <string name="vibe_chill">느긋</string>
@@ -118,8 +119,6 @@
     <!-- Review / stats (M2) -->
     <string name="review_title">하루 리뷰</string>
     <string name="stats_title">통계</string>
-    <string name="coming_next">다음 빌드에서 추가돼요. 매시간 기록은 이미 저장되고 있어요.</string>
-    <string name="hours_logged_today">오늘 기록한 시간</string>
 
     <!-- Settings -->
     <string name="settings_title">설정</string>
@@ -155,4 +154,104 @@
     <string name="tl_just_saved">✓ 방금 저장됨</string>
     <string name="qr_more_details">자세히 기록 →</string>
     <string name="qr_logged">기록됨 ✓</string>
+
+    <!-- Built-in review ratings -->
+    <string name="rating_productivity">생산성</string>
+    <string name="rating_happiness">행복</string>
+    <string name="rating_progress">진전</string>
+
+    <!-- Daily review -->
+    <string name="rv_reviewed">리뷰 완료 ✓</string>
+    <string name="rv_not_reviewed">아직 리뷰 안 함</string>
+    <string name="rv_hours_logged">기록한 시간</string>
+    <string name="rv_hours_value">%1$d / %2$d시간</string>
+    <string name="rv_top_activities">많이 한 일</string>
+    <string name="rv_no_logs">이날 기록한 시간이 없어요.</string>
+    <string name="rv_view_timeline">타임라인 보기 →</string>
+    <string name="rv_overall">// 오늘 하루</string>
+    <string name="rv_required">필수</string>
+    <string name="rv_overall_hint">하루는 어땠어요? 별을 눌러요.</string>
+    <string name="rv_overall_1">힘듦</string>
+    <string name="rv_overall_2">별로</string>
+    <string name="rv_overall_3">보통</string>
+    <string name="rv_overall_4">좋음</string>
+    <string name="rv_overall_5">최고</string>
+    <string name="rv_more">// 추가 평가</string>
+    <string name="rv_optional">선택</string>
+    <string name="rv_tap_again">같은 점수를 다시 누르면 지워져요.</string>
+    <string name="rv_note_hint">메모 (선택)</string>
+    <string name="rv_add_rating">+ 평가 항목 추가</string>
+    <string name="rv_memo">// 자기 전 메모</string>
+    <string name="rv_memo_hint">오늘 기억하고 싶은 게 있나요?</string>
+    <string name="rv_save">[ ★ 리뷰 저장 ★ ]</string>
+    <string name="rv_update">[ ★ 리뷰 수정 ★ ]</string>
+    <string name="rv_saved">리뷰 저장됨 ✓</string>
+    <string name="rv_need_overall">저장하려면 하루 점수를 골라요.</string>
+    <string name="rv_delete">리뷰 삭제</string>
+    <string name="rv_deleted_tag">삭제됨</string>
+    <string name="rv_score">%1$d/%2$d</string>
+
+    <!-- Rating editor -->
+    <string name="re_new">새 평가 항목</string>
+    <string name="re_edit">평가 항목 편집</string>
+    <string name="re_style">모양</string>
+    <string name="re_stars">별 5개</string>
+    <string name="re_hearts">하트 5개</string>
+    <string name="re_segments">막대 10칸</string>
+    <string name="re_delete">평가 항목 삭제</string>
+    <string name="re_delete_note">새 리뷰에는 안 보여요. 지난 점수는 남아요.</string>
+
+    <!-- Stats -->
+    <string name="st_week">주</string>
+    <string name="st_month">월</string>
+    <string name="st_hours">기록한 시간</string>
+    <string name="st_vs_week">지난주 대비 %1$s</string>
+    <string name="st_vs_month">지난달 대비 %1$s</string>
+    <string name="st_avg">평균 하루 점수</string>
+    <string name="st_avg_none">리뷰 없음</string>
+    <string name="st_rated_days">%1$d일 평가</string>
+    <string name="st_streak">연속 기록</string>
+    <string name="st_days">%1$d일</string>
+    <string name="st_best">최고 %1$d일</string>
+    <string name="st_daily">// 날짜별 기록</string>
+    <string name="st_full">다 채움</string>
+    <string name="st_partial">일부</string>
+    <string name="st_tap_day">날짜를 누르면 타임라인이 열려요.</string>
+    <string name="st_activities">// 활동별 시간</string>
+    <string name="st_no_hours">이 기간에 기록한 시간이 없어요.</string>
+    <string name="st_goals">// 목표 진행</string>
+    <string name="st_goal_left">%1$d시간 남음</string>
+    <string name="st_goal_reached">목표 시간 도달</string>
+    <string name="st_goal_period">이 기간 +%1$d시간</string>
+    <string name="st_no_goals">아직 목표가 없어요. 기록 화면이나 설정 → 기록 항목에서 추가해요.</string>
+    <string name="st_achieved">달성</string>
+    <string name="st_hours_short">%1$d시간</string>
+
+    <!-- Settings: journal + reminder -->
+    <string name="settings_journal">// 기록 항목</string>
+    <string name="settings_activities">활동</string>
+    <string name="settings_vibes">기분</string>
+    <string name="settings_goals">목표</string>
+    <string name="settings_ratings">리뷰 평가 항목</string>
+    <string name="settings_active_count">%1$d개 사용 중</string>
+    <string name="settings_goals_count">진행 %1$d · 달성 %2$d</string>
+    <string name="settings_off">끔</string>
+    <string name="rr_title">하루 리뷰 알림</string>
+    <string name="rr_note">이미 리뷰한 날은 알리지 않아요.</string>
+    <string name="rr_off">끔</string>
+
+    <!-- Journal editors -->
+    <string name="ed_tap_to_edit">항목을 눌러 편집하거나 삭제해요.</string>
+    <string name="ed_new_activity">+ 새 활동</string>
+    <string name="ed_new_vibe">+ 새 기분</string>
+    <string name="ed_new_rating">+ 새 평가 항목</string>
+    <string name="ve_new">새 기분</string>
+    <string name="ve_edit">기분 편집</string>
+    <string name="ve_label">이름</string>
+    <string name="ve_kaomoji">이모티콘 또는 이모지</string>
+    <string name="ve_delete">기분 삭제</string>
+    <string name="ge_edit">목표 편집</string>
+    <string name="ge_delete">목표 삭제</string>
+    <string name="ge_delete_note">기록한 시간은 남고, 이 목표에만 더 이상 세지 않아요.</string>
+    <string name="ql_goal_confirm">이 목표를 달성으로 표시할까요? 기록 화면에서 사라지고, 설정 → 기록 항목에서 다시 열 수 있어요.</string>
 </resources>

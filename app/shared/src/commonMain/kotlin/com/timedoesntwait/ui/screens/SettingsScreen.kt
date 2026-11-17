@@ -14,7 +14,24 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.window.Dialog
+import com.timedoesntwait.data.ReviewRepository
+import com.timedoesntwait.resources.cancel
+import com.timedoesntwait.resources.rr_note
+import com.timedoesntwait.resources.rr_off
+import com.timedoesntwait.resources.rr_title
+import com.timedoesntwait.resources.settings_active_count
+import com.timedoesntwait.resources.settings_activities
+import com.timedoesntwait.resources.settings_goals
+import com.timedoesntwait.resources.settings_goals_count
+import com.timedoesntwait.resources.settings_journal
+import com.timedoesntwait.resources.settings_off
+import com.timedoesntwait.resources.settings_ratings
+import com.timedoesntwait.resources.settings_vibes
+import com.timedoesntwait.ui.components.PixelCard
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -62,10 +79,25 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onCheckinHours: () -> Unit, onPermissions: () -> Unit) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    onCheckinHours: () -> Unit,
+    onPermissions: () -> Unit,
+    onEditActivities: () -> Unit,
+    onEditVibes: () -> Unit,
+    onEditGoals: () -> Unit,
+    onEditRatings: () -> Unit,
+) {
     val platform = koinInject<Platform>()
     val settings = koinInject<SettingsRepository>()
     val journal = koinInject<JournalRepository>()
+    val reviews = koinInject<ReviewRepository>()
+    val activities by remember { journal.activities() }.collectAsState(emptyList())
+    val vibes by remember { journal.vibes() }.collectAsState(emptyList())
+    val goals by remember { journal.goals() }.collectAsState(emptyList())
+    val ratings by remember { reviews.ratingDimensions() }.collectAsState(emptyList())
+    val reminderHour by remember { settings.reviewReminderHourFlow() }.collectAsState(settings.reviewReminderHour)
+    var pickingReminder by remember { mutableStateOf(false) }
     val language by platform.language.collectAsState()
     val permissions by platform.permissions.collectAsState()
     val unsynced by remember { journal.outboxCount() }.collectAsState(0L)
@@ -82,7 +114,24 @@ fun SettingsScreen(onBack: () -> Unit, onCheckinHours: () -> Unit, onPermissions
                 InkDivider()
                 SettingRow(Res.string.settings_quick_reply, stringResource(Res.string.settings_quick_reply_desc), null)
                 InkDivider()
-                SettingRow(Res.string.settings_review_reminder, TimeLabels.clock(settings.reviewReminderHour, lang), null)
+                SettingRow(
+                    Res.string.settings_review_reminder,
+                    reminderHour?.let { TimeLabels.clock(it, lang) } ?: stringResource(Res.string.settings_off),
+                ) { pickingReminder = true }
+            }
+
+            SectionCard(stringResource(Res.string.settings_journal)) {
+                SettingRow(Res.string.settings_activities, stringResource(Res.string.settings_active_count, activities.size), onEditActivities)
+                InkDivider()
+                SettingRow(Res.string.settings_vibes, stringResource(Res.string.settings_active_count, vibes.size), onEditVibes)
+                InkDivider()
+                SettingRow(
+                    Res.string.settings_goals,
+                    stringResource(Res.string.settings_goals_count, goals.count { !it.achieved }, goals.count { it.achieved }),
+                    onEditGoals,
+                )
+                InkDivider()
+                SettingRow(Res.string.settings_ratings, stringResource(Res.string.settings_active_count, ratings.count { !it.archived }), onEditRatings)
             }
 
             SectionCard(stringResource(Res.string.settings_language)) {
@@ -132,6 +181,44 @@ fun SettingsScreen(onBack: () -> Unit, onCheckinHours: () -> Unit, onPermissions
                 align = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
+        }
+    }
+
+    if (pickingReminder) {
+        ReminderDialog(reminderHour, { pickingReminder = false }) { hour ->
+            settings.reviewReminderHour = hour
+            platform.rescheduleCheckins() // also reschedules the review reminder
+            pickingReminder = false
+        }
+    }
+}
+
+/** Picks the evening reminder hour (6 PM – 11 PM) or turns it off. */
+@Composable
+private fun ReminderDialog(current: Int?, onDismiss: () -> Unit, onPick: (Int?) -> Unit) {
+    val lang = CobaltTheme.language
+    Dialog(onDismissRequest = onDismiss) {
+        PixelCard(Modifier.fillMaxWidth()) {
+            PixelText(stringResource(Res.string.rr_title), style = CobaltTheme.type.title)
+            Spacer(Modifier.height(6.dp))
+            PixelText(stringResource(Res.string.rr_note), style = CobaltTheme.type.small)
+            Spacer(Modifier.height(12.dp))
+            val options: List<Int?> = (18..23).toList() + null
+            options.chunked(2).forEach { row ->
+                Row(Modifier.padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { hour ->
+                        PixelChip(
+                            hour?.let { TimeLabels.clock(it, lang) } ?: stringResource(Res.string.rr_off),
+                            current == hour,
+                            { onPick(hour) },
+                            Modifier.weight(1f),
+                        )
+                    }
+                    repeat(2 - row.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            PixelTextButton(stringResource(Res.string.cancel), onDismiss, Modifier.fillMaxWidth())
         }
     }
 }

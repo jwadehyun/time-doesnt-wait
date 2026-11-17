@@ -17,5 +17,10 @@
     <string name="act_nap">낮잠</string>
     <string name="act_game">게임</string>
     <string name="act_chat">수다</string>
+    <string name="act_workout">운동</string>
     <string name="unknown">알 수 없음</string>
+    <string name="channel_review">하루 리뷰</string>
+    <string name="channel_review_desc">저녁에 하루를 평가하라고 알려줘요.</string>
+    <string name="review_title">오늘 하루 어땠어요?</string>
+    <string name="review_text">하루 점수를 매기고 자기 전 메모를 남겨요.</string>
 </resources>

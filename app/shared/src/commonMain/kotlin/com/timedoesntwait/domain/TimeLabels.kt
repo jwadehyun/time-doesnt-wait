@@ -43,6 +43,31 @@ object TimeLabels {
         AppLanguage.KO -> "${date.month.ordinal + 1}월 ${date.day}일 (${weekdayShort(date.dayOfWeek, lang)})"
     }
 
+    /** "Nov 10–16", "Oct 27 – Nov 2" / "11월 10일–16일", "10월 27일 – 11월 2일". */
+    fun dayRange(start: LocalDate, end: LocalDate, lang: AppLanguage): String {
+        val sameMonth = start.month == end.month && start.year == end.year
+        return when (lang) {
+            AppLanguage.EN ->
+                if (sameMonth) "${MONTHS_EN[start.month.ordinal]} ${start.day}–${end.day}"
+                else "${MONTHS_EN[start.month.ordinal]} ${start.day} – ${MONTHS_EN[end.month.ordinal]} ${end.day}"
+            AppLanguage.KO ->
+                if (sameMonth) "${start.month.ordinal + 1}월 ${start.day}일–${end.day}일"
+                else "${start.month.ordinal + 1}월 ${start.day}일 – ${end.month.ordinal + 1}월 ${end.day}일"
+        }
+    }
+
+    /** "November 2026" / "2026년 11월". */
+    fun month(date: LocalDate, lang: AppLanguage): String = when (lang) {
+        AppLanguage.EN -> "${MONTHS_EN_LONG[date.month.ordinal]} ${date.year}"
+        AppLanguage.KO -> "${date.year}년 ${date.month.ordinal + 1}월"
+    }
+
+    /** One decimal place without platform formatting: 4.1. */
+    fun oneDecimal(value: Double): String {
+        val tenths = kotlin.math.round(value * 10).toLong()
+        return "${tenths / 10}.${tenths % 10}"
+    }
+
     fun weekdayShort(day: DayOfWeek, lang: AppLanguage): String = when (lang) {
         AppLanguage.EN -> WEEKDAYS_EN[day.ordinal]
         AppLanguage.KO -> WEEKDAYS_KO[day.ordinal]
@@ -51,6 +76,10 @@ object TimeLabels {
     private fun h12(hour: Int): Int = if (hour % 12 == 0) 12 else hour % 12
 
     private val MONTHS_EN = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+    private val MONTHS_EN_LONG = listOf(
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
+    )
     private val WEEKDAYS_EN = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
     private val WEEKDAYS_KO = listOf("월", "화", "수", "목", "금", "토", "일")
 }

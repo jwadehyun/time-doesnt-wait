@@ -452,6 +452,21 @@ object PixelIcons {
             .....##.....
         """,
     ).mapValues { (_, art) -> art.trimIndent().lines().filter { it.isNotBlank() } }
+        .let { icons -> icons + OUTLINED.associate { "${it}_outline" to outline(icons.getValue(it)) } }
+
+    /** Icons that also come as "<name>_outline" (empty stars and hearts on rating gauges). */
+    private val OUTLINED get() = listOf("star", "heart")
+
+    /** Keeps only the edge pixels of a filled icon. */
+    private fun outline(grid: List<String>): List<String> = grid.mapIndexed { y, row ->
+        row.mapIndexed { x, c ->
+            if (c != '#') '.'
+            else {
+                fun filled(xx: Int, yy: Int) = grid.getOrNull(yy)?.getOrNull(xx) == '#'
+                if (filled(x - 1, y) && filled(x + 1, y) && filled(x, y - 1) && filled(x, y + 1)) '.' else '#'
+            }
+        }.joinToString("")
+    }
 
     /** Icons offered in the activity editor (20 = 5 rows of 4). */
     val activityChoices = listOf(

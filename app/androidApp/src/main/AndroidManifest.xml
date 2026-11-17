@@ -49,6 +49,11 @@
             android:name=".checkin.CheckinReplyReceiver"
             android:exported="false" />
 
+        <!-- Evening "How was today?" reminder; skipped when the day is already reviewed. -->
+        <receiver
+            android:name=".checkin.ReviewReminderReceiver"
+            android:exported="false" />
+
         <!-- Rebuilds the schedule after reboot, app update, clock/time-zone change, or exact-alarm permission change. -->
         <receiver
             android:name=".checkin.RescheduleReceiver"

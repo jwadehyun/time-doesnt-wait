@@ -18,5 +18,10 @@
     <string name="act_nap">Nap</string>
     <string name="act_game">Game</string>
     <string name="act_chat">Chat</string>
+    <string name="act_workout">Work out</string>
     <string name="unknown">Unknown</string>
+    <string name="channel_review">Daily review</string>
+    <string name="channel_review_desc">An evening reminder to rate your day.</string>
+    <string name="review_title">How was today?</string>
+    <string name="review_text">Rate your day and write a bedtime memo.</string>
 </resources>

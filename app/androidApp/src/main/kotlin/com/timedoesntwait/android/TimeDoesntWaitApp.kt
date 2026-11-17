@@ -6,6 +6,7 @@ import com.timedoesntwait.android.checkin.CheckinNotifier
 import com.timedoesntwait.android.checkin.CheckinScheduler
 import com.timedoesntwait.data.AndroidDriverFactory
 import com.timedoesntwait.data.JournalRepository
+import com.timedoesntwait.data.ReviewRepository
 import com.timedoesntwait.data.ScheduleRepository
 import com.timedoesntwait.data.SettingsRepository
 import com.timedoesntwait.data.sharedModule
@@ -51,6 +52,9 @@ class TimeDoesntWaitApp : Application() {
         journal.onSlotLogged = { slot, source ->
             if (source != EntrySource.NOTIFICATION_REPLY && source != EntrySource.QUICK_BUTTON) notifier.cancel(slot)
         }
+
+        // Reviewing the day in the app clears the evening reminder.
+        get<ReviewRepository>(ReviewRepository::class.java).onReviewSaved = { notifier.cancelReviewReminder() }
 
         get<CheckinScheduler>(CheckinScheduler::class.java).scheduleIfOnboarded()
     }

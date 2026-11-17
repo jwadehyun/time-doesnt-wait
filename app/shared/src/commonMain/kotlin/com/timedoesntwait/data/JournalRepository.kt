@@ -58,6 +58,7 @@ class JournalRepository(
                     q.enqueue("vibe", id, t)
                 }
             }
+            migrateChatToWorkout(t)
             if (q.ratingDimensionCount().executeAsOne() == 0L) {
                 BuiltIns.RATINGS.forEachIndexed { i, (key, name, kind) ->
                     val id = Ids.uuidV7(t)
@@ -65,6 +66,25 @@ class JournalRepository(
                     q.enqueue("rating_dimension", id, t)
                 }
             }
+        }
+    }
+
+    /**
+     * "Chat" was replaced by "Work out" as a default activity. Installs seeded before that get
+     * Work out in Chat's place; an untouched Chat is archived, so hours logged with it keep showing it.
+     * A Chat the user renamed or re-iconed is theirs and stays. Runs once: it stops when Work out exists.
+     */
+    private fun migrateChatToWorkout(t: Long) {
+        if (q.activityByNameKey("workout").executeAsList().isNotEmpty()) return
+        val chat = q.activityByNameKey("chat").executeAsList().firstOrNull()
+        val (key, name, icon) = BuiltIns.ACTIVITIES.first { it.first == "workout" }
+        val sort = chat?.sort_order ?: (q.maxActivitySort().executeAsOne() + 1)
+        val id = Ids.uuidV7(t)
+        q.insertActivity(id, name, key, icon, "", sort, 1, t)
+        q.enqueue("activity", id, t)
+        if (chat != null && chat.archived == 0L && chat.name == "Chat" && chat.icon == "chat") {
+            q.archiveActivity(t, chat.id)
+            q.enqueue("activity", chat.id, t)
         }
     }
 
@@ -78,6 +98,10 @@ class JournalRepository(
 
     fun vibes(): Flow<List<Vibe>> =
         q.activeVibes().asFlow().mapToList(io).mapRows { it.toModel() }
+
+    /** Includes deleted vibes, so past entries keep showing them. */
+    fun allVibes(): Flow<List<Vibe>> =
+        q.allVibes().asFlow().mapToList(io).mapRows { it.toModel() }
 
     fun goals(): Flow<List<Goal>> =
         q.goalsWithProgress().asFlow().mapToList(io).mapRows {
@@ -241,6 +265,35 @@ class JournalRepository(
         }
     }
 
+    suspend fun addVibe(label: String, kaomoji: String): Vibe = withContext(io) {
+        db.transactionWithResult {
+            val t = now()
+            val id = Ids.uuidV7(t)
+            val sort = q.maxVibeSort().executeAsOne() + 1
+            q.insertVibe(id, label.trim(), null, kaomoji.trim(), sort, t)
+            q.enqueue("vibe", id, t)
+            Vibe(id, label.trim(), null, kaomoji.trim(), sort.toInt(), archived = false)
+        }
+    }
+
+    /** Past entries show the new label and kaomoji. */
+    suspend fun updateVibe(id: String, label: String, kaomoji: String) = withContext(io) {
+        db.transaction {
+            val t = now()
+            q.updateVibe(label.trim(), kaomoji.trim(), t, id)
+            q.enqueue("vibe", id, t)
+        }
+    }
+
+    /** Removes a vibe from the picker; entries already logged with it keep showing it. */
+    suspend fun deleteVibe(id: String) = withContext(io) {
+        db.transaction {
+            val t = now()
+            q.archiveVibe(t, id)
+            q.enqueue("vibe", id, t)
+        }
+    }
+
     suspend fun addGoal(name: String, targetHours: Int): String = withContext(io) {
         db.transactionWithResult {
             val t = now()
@@ -255,6 +308,23 @@ class JournalRepository(
         db.transaction {
             val t = now()
             q.setGoalAchieved(if (achieved) 1 else 0, t, id)
+            q.enqueue("goal", id, t)
+        }
+    }
+
+    suspend fun updateGoal(id: String, name: String, targetHours: Int, achieved: Boolean) = withContext(io) {
+        db.transaction {
+            val t = now()
+            q.updateGoal(name.trim(), targetHours.toLong(), if (achieved) 1 else 0, t, id)
+            q.enqueue("goal", id, t)
+        }
+    }
+
+    /** Deletes a goal. Hours logged toward it stay logged; they just no longer count for a goal. */
+    suspend fun deleteGoal(id: String) = withContext(io) {
+        db.transaction {
+            val t = now()
+            q.softDeleteGoal(t, id)
             q.enqueue("goal", id, t)
         }
     }

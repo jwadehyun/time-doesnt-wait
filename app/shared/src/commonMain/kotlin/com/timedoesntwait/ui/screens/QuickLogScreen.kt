@@ -28,11 +28,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.timedoesntwait.data.JournalRepository
 import com.timedoesntwait.data.SettingsRepository
 import com.timedoesntwait.domain.Activity
@@ -48,8 +48,6 @@ import com.timedoesntwait.platform.PermissionStatus
 import com.timedoesntwait.platform.Platform
 import com.timedoesntwait.platform.SetupPermission
 import com.timedoesntwait.resources.Res
-import com.timedoesntwait.resources.cancel
-import com.timedoesntwait.resources.create
 import com.timedoesntwait.resources.perm_banner_alarms
 import com.timedoesntwait.resources.perm_banner_late
 import com.timedoesntwait.resources.perm_banner_notifications
@@ -58,18 +56,17 @@ import com.timedoesntwait.resources.ql_add
 import com.timedoesntwait.resources.ql_details
 import com.timedoesntwait.resources.ql_edit
 import com.timedoesntwait.resources.ql_edit_done
+import com.timedoesntwait.resources.cancel
 import com.timedoesntwait.resources.ql_goal_achieved
+import com.timedoesntwait.resources.ql_goal_confirm
 import com.timedoesntwait.resources.ql_goal_mark_achieved
-import com.timedoesntwait.resources.ql_goal_name
 import com.timedoesntwait.resources.ql_goal_new
 import com.timedoesntwait.resources.ql_goal_plus
 import com.timedoesntwait.resources.ql_goal_progress
-import com.timedoesntwait.resources.ql_goal_target
 import com.timedoesntwait.resources.ql_goals
 import com.timedoesntwait.resources.ql_header
 import com.timedoesntwait.resources.ql_hold_to_edit
 import com.timedoesntwait.resources.ql_logged_already
-import com.timedoesntwait.resources.ql_new_goal
 import com.timedoesntwait.resources.ql_question
 import com.timedoesntwait.resources.ql_quick_hint
 import com.timedoesntwait.resources.ql_save
@@ -137,6 +134,7 @@ fun QuickLogScreen(
     var editing by remember { mutableStateOf<Activity?>(null) }
     var showNewActivity by remember { mutableStateOf(false) }
     var showNewGoal by remember { mutableStateOf(false) }
+    var confirmAchieved by remember { mutableStateOf<Goal?>(null) }
 
     LaunchedEffect(slot) {
         val existing = repo.entryFor(slot)
@@ -270,6 +268,8 @@ fun QuickLogScreen(
                 countedThisHour = goal.id in goalIds,
                 onToggle = { goalIds = if (goal.id in goalIds) goalIds - goal.id else goalIds + goal.id },
                 onMarkAchieved = { scope.launch { repo.setGoalAchieved(goal.id, true) } },
+                // Tapping an open goal offers to mark it achieved, even before it reaches its target.
+                onClick = if (goal.achieved) null else { { confirmAchieved = goal } },
             )
         }
         PixelTextButton(stringResource(Res.string.ql_goal_new), { showNewGoal = true }, Modifier.fillMaxWidth())
@@ -318,15 +318,29 @@ fun QuickLogScreen(
             },
         )
     }
+    confirmAchieved?.let { goal ->
+        MarkAchievedDialog(
+            goal = goal,
+            onDismiss = { confirmAchieved = null },
+            onConfirm = {
+                scope.launch {
+                    repo.setGoalAchieved(goal.id, true)
+                    confirmAchieved = null
+                }
+            },
+        )
+    }
     if (showNewGoal) {
-        NewGoalDialog(
+        GoalEditorDialog(
+            existing = null,
             onDismiss = { showNewGoal = false },
-            onCreate = { name, hours ->
+            onSave = { name, hours, _ ->
                 scope.launch {
                     repo.addGoal(name, hours)
                     showNewGoal = false
                 }
             },
+            onDelete = null,
         )
     }
 }
@@ -427,8 +441,18 @@ private fun VibeGrid(vibes: List<Vibe>, selectedId: String?, onSelect: (String) 
 }
 
 @Composable
-private fun GoalRow(goal: Goal, countedThisHour: Boolean, onToggle: () -> Unit, onMarkAchieved: () -> Unit) {
-    PixelCard(padding = 10.dp, shadow = Cobalt.ShadowSmall) {
+private fun GoalRow(
+    goal: Goal,
+    countedThisHour: Boolean,
+    onToggle: () -> Unit,
+    onMarkAchieved: () -> Unit,
+    onClick: (() -> Unit)?,
+) {
+    PixelCard(
+        modifier = if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier,
+        padding = 10.dp,
+        shadow = Cobalt.ShadowSmall,
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 PixelText(goal.name, style = CobaltTheme.type.user, maxLines = 1)
@@ -463,36 +487,20 @@ private fun GoalRow(goal: Goal, countedThisHour: Boolean, onToggle: () -> Unit, 
     }
 }
 
+/** Asked when an open goal is tapped: marks it achieved, whether or not it reached its target hours. */
 @Composable
-private fun NewGoalDialog(onDismiss: () -> Unit, onCreate: (String, Int) -> Unit) {
-    var name by remember { mutableStateOf("") }
-    var hours by remember { mutableStateOf("10") }
+private fun MarkAchievedDialog(goal: Goal, onDismiss: () -> Unit, onConfirm: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
         PixelCard(Modifier.fillMaxWidth()) {
-            PixelText(stringResource(Res.string.ql_new_goal), style = CobaltTheme.type.title)
-            Spacer(Modifier.height(12.dp))
-            PixelTextField(name, { name = it }, stringResource(Res.string.ql_goal_name), maxLength = 24, singleLine = true)
-            Spacer(Modifier.height(12.dp))
-            PixelText(stringResource(Res.string.ql_goal_target), style = CobaltTheme.type.small)
+            PixelText(goal.name, style = CobaltTheme.type.title)
             Spacer(Modifier.height(4.dp))
-            PixelTextField(
-                hours,
-                { v -> hours = v.filter { it.isDigit() }.take(4) },
-                "10",
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            )
+            PixelText(stringResource(Res.string.ql_goal_progress, goal.progressHours, goal.targetHours), style = CobaltTheme.type.small)
+            Spacer(Modifier.height(12.dp))
+            PixelText(stringResource(Res.string.ql_goal_confirm), style = CobaltTheme.type.body)
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 PixelTextButton(stringResource(Res.string.cancel), onDismiss, Modifier.weight(1f))
-                val target = hours.toIntOrNull() ?: 0
-                PixelTextButton(
-                    stringResource(Res.string.create),
-                    { onCreate(name, target) },
-                    Modifier.weight(1f),
-                    filled = true,
-                    enabled = name.isNotBlank() && target > 0,
-                )
+                PixelTextButton(stringResource(Res.string.ql_goal_achieved), onConfirm, Modifier.weight(1f), filled = true)
             }
         }
     }

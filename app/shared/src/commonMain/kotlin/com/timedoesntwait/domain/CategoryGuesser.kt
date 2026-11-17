@@ -63,9 +63,14 @@ class CategoryGuesser(private val activities: List<Activity>) {
                 "공부", "수업", "강의", "숙제", "과제", "독서", "읽었", "읽기", "시험", "학원", "복습", "예습",
             ),
             "walk" to setOf(
-                "walk", "walked", "walking", "run", "ran", "running", "gym", "workout", "exercise", "yoga",
-                "bike", "cycling", "swim", "swimming", "hike", "hiking", "commute", "stroll", "pilates",
-                "산책", "걷", "달리기", "러닝", "운동", "헬스", "요가", "자전거", "수영", "등산", "출퇴근", "필라테스",
+                "walk", "walked", "walking", "hike", "hiking", "commute", "stroll",
+                "산책", "걷", "등산", "출퇴근",
+            ),
+            "workout" to setOf(
+                "workout", "work out", "worked out", "gym", "exercise", "run", "ran", "running", "jog", "jogging",
+                "yoga", "bike", "cycling", "swim", "swimming", "pilates", "lift", "lifting", "weights", "crossfit",
+                "squat", "squats", "cardio",
+                "운동", "헬스", "달리기", "러닝", "조깅", "요가", "자전거", "수영", "필라테스", "크로스핏", "웨이트", "스쿼트",
             ),
             "nap" to setOf(
                 "nap", "napped", "sleep", "slept", "sleeping", "rest", "rested", "bed", "doze", "dozed",

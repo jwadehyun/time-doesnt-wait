@@ -25,12 +25,14 @@ class JournalRepositoryTest {
         override fun now() = Instant.fromEpochMilliseconds(1_794_640_804_050)
     }
     private lateinit var db: AppDatabase
+    private lateinit var driver: app.cash.sqldelight.db.SqlDriver
     private lateinit var repo: JournalRepository
     private val day = LocalDate(2026, 11, 16)
 
     @BeforeTest
     fun setUp() {
-        db = AppDatabase(testDriverFactory().create())
+        driver = testDriverFactory().create()
+        db = AppDatabase(driver)
         repo = JournalRepository(db, clock, Dispatchers.Unconfined)
         repo.seedDefaultsIfNeeded()
     }
@@ -116,10 +118,10 @@ class JournalRepositoryTest {
     fun topActivitiesFollowUsage() = runTest {
         val acts = repo.activities().first()
         val walk = acts.first { it.nameKey == "walk" }
-        val chat = acts.first { it.nameKey == "chat" }
+        val workout = acts.first { it.nameKey == "workout" }
         listOf(9, 10, 11).forEach { repo.logActivity(HourSlot(day, it), walk.id, EntrySource.APP) }
-        repo.logActivity(HourSlot(day, 12), chat.id, EntrySource.APP)
-        assertEquals(listOf(walk.id, chat.id), repo.topActivities(day).map { it.id })
+        repo.logActivity(HourSlot(day, 12), workout.id, EntrySource.APP)
+        assertEquals(listOf(walk.id, workout.id), repo.topActivities(day).map { it.id })
     }
 
     @Test
@@ -161,10 +163,90 @@ class JournalRepositoryTest {
 
     @Test
     fun sameTextReusesItsLastActivity() = runTest {
-        val chat = repo.activities().first().first { it.nameKey == "chat" }
+        val workout = repo.activities().first().first { it.nameKey == "workout" }
         // Logged once with a hand-picked activity the guesser wouldn't choose.
-        repo.saveFromApp(HourSlot(day, 9), chat.id, null, "standup", emptySet(), EntrySource.APP)
+        repo.saveFromApp(HourSlot(day, 9), workout.id, null, "standup", emptySet(), EntrySource.APP)
         // Typing the same text again reuses that activity.
-        assertEquals(chat.id, repo.logText(HourSlot(day, 12), "Standup", EntrySource.NOTIFICATION_REPLY).activityId)
+        assertEquals(workout.id, repo.logText(HourSlot(day, 12), "Standup", EntrySource.NOTIFICATION_REPLY).activityId)
+    }
+
+    @Test
+    fun vibesCanBeAddedEditedAndDeletedKeepingPastEntries() = runTest {
+        val focused = repo.addVibe(" Focused ", "(•_•)")
+        val slot = HourSlot(day, 10)
+        repo.saveEntry(slot, null, focused.id, "", EntrySource.APP)
+
+        repo.updateVibe(focused.id, "Locked in", "(⌐■_■)")
+        repo.deleteVibe(focused.id)
+
+        assertTrue(repo.vibes().first().none { it.id == focused.id }, "gone from the picker")
+        val kept = repo.allVibes().first().single { it.id == focused.id }
+        assertEquals("Locked in", kept.label)
+        assertEquals("(⌐■_■)", kept.kaomoji)
+        assertEquals(focused.id, repo.entryFor(slot)!!.vibeId)
+    }
+
+    @Test
+    fun goalsCanBeEditedAndDeleted() = runTest {
+        val id = repo.addGoal("Learn Kotlin", 20)
+        repo.saveFromApp(HourSlot(day, 9), null, null, "", setOf(id), EntrySource.APP)
+
+        repo.updateGoal(id, "Learn KMP", 30, achieved = true)
+        val goal = repo.goals().first().single()
+        assertEquals("Learn KMP", goal.name)
+        assertEquals(30, goal.targetHours)
+        assertTrue(goal.achieved)
+        assertEquals(1, goal.progressHours)
+
+        repo.deleteGoal(id)
+        assertTrue(repo.goals().first().isEmpty())
+        assertEquals(1, repo.entriesFor(day).first().size, "the logged hour stays")
+    }
+
+    @Test
+    fun newInstallsGetWorkOutInsteadOfChat() = runTest {
+        val keys = repo.activities().first().map { it.nameKey }
+        assertTrue("workout" in keys)
+        assertTrue("chat" !in keys)
+        assertEquals(8, keys.size)
+    }
+
+    @Test
+    fun olderInstallsSwapAnUntouchedChatForWorkOut() = runTest {
+        // An install seeded before the change: Chat in 8th place, Work out missing, an hour logged as Chat.
+        val workout = repo.activities().first().single { it.nameKey == "workout" }
+        db.driverDelete(workout.id)
+        db.journalQueries.insertActivity("old-chat", "Chat", "chat", "chat", "", workout.sortOrder.toLong(), 1, 1)
+        repo.logActivity(HourSlot(day, 9), "old-chat", EntrySource.APP)
+
+        repo.seedDefaultsIfNeeded()
+        repo.seedDefaultsIfNeeded() // runs once
+
+        val active = repo.activities().first()
+        assertEquals(1, active.count { it.nameKey == "workout" })
+        assertTrue(active.none { it.nameKey == "chat" }, "untouched Chat leaves the picker")
+        assertEquals(workout.sortOrder, active.single { it.nameKey == "workout" }.sortOrder, "takes Chat's place")
+        val chat = repo.allActivities().first().single { it.id == "old-chat" }
+        assertTrue(chat.archived)
+        assertTrue(chat.usesBuiltInName, "past hours still show Chat, translated")
+        assertEquals("old-chat", repo.entryFor(HourSlot(day, 9))!!.activityId)
+    }
+
+    @Test
+    fun aRenamedChatIsKept() = runTest {
+        val workout = repo.activities().first().single { it.nameKey == "workout" }
+        db.driverDelete(workout.id)
+        db.journalQueries.insertActivity("old-chat", "Friends", "chat", "chat", "", 99, 1, 1)
+
+        repo.seedDefaultsIfNeeded()
+
+        val active = repo.activities().first()
+        assertTrue(active.any { it.id == "old-chat" })
+        assertTrue(active.any { it.nameKey == "workout" })
+    }
+
+    /** Test-only: removes a row outright, as if it was never seeded. */
+    private fun AppDatabase.driverDelete(id: String) {
+        driver.execute(null, "DELETE FROM activity WHERE id = ?", 1) { bindString(0, id) }
     }
 }

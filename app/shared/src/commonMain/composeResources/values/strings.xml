@@ -29,6 +29,7 @@
     <string name="act_nap">Nap</string>
     <string name="act_game">Game</string>
     <string name="act_chat">Chat</string>
+    <string name="act_workout">Work out</string>
     <string name="vibe_super">Super</string>
     <string name="vibe_solid">Solid</string>
     <string name="vibe_chill">Chill</string>
@@ -118,8 +119,6 @@
     <!-- Review / stats (M2) -->
     <string name="review_title">DAILY REVIEW</string>
     <string name="stats_title">STATS</string>
-    <string name="coming_next">Arrives in the next build. Your hourly logs are already being saved for it.</string>
-    <string name="hours_logged_today">HOURS LOGGED TODAY</string>
 
     <!-- Settings -->
     <string name="settings_title">SETTINGS</string>
@@ -155,4 +154,104 @@
     <string name="tl_just_saved">✓ JUST SAVED</string>
     <string name="qr_more_details">MORE DETAILS →</string>
     <string name="qr_logged">Logged ✓</string>
+
+    <!-- Built-in review ratings -->
+    <string name="rating_productivity">Productivity</string>
+    <string name="rating_happiness">Happiness</string>
+    <string name="rating_progress">Progress</string>
+
+    <!-- Daily review -->
+    <string name="rv_reviewed">REVIEWED ✓</string>
+    <string name="rv_not_reviewed">NOT REVIEWED YET</string>
+    <string name="rv_hours_logged">HOURS LOGGED</string>
+    <string name="rv_hours_value">%1$d / %2$d h</string>
+    <string name="rv_top_activities">TOP ACTIVITIES</string>
+    <string name="rv_no_logs">No hours logged this day.</string>
+    <string name="rv_view_timeline">VIEW TIMELINE →</string>
+    <string name="rv_overall">// OVERALL</string>
+    <string name="rv_required">REQUIRED</string>
+    <string name="rv_overall_hint">How was the day? Tap a star.</string>
+    <string name="rv_overall_1">ROUGH</string>
+    <string name="rv_overall_2">MEH</string>
+    <string name="rv_overall_3">OKAY</string>
+    <string name="rv_overall_4">GOOD</string>
+    <string name="rv_overall_5">GREAT</string>
+    <string name="rv_more">// MORE RATINGS</string>
+    <string name="rv_optional">OPTIONAL</string>
+    <string name="rv_tap_again">Tap the same score again to clear it.</string>
+    <string name="rv_note_hint">Note (optional)</string>
+    <string name="rv_add_rating">+ ADD CUSTOM RATING</string>
+    <string name="rv_memo">// BEDTIME MEMO</string>
+    <string name="rv_memo_hint">Anything to remember about today?</string>
+    <string name="rv_save">[ ★ SAVE REVIEW ★ ]</string>
+    <string name="rv_update">[ ★ UPDATE REVIEW ★ ]</string>
+    <string name="rv_saved">Review saved ✓</string>
+    <string name="rv_need_overall">Pick an overall rating to save.</string>
+    <string name="rv_delete">DELETE REVIEW</string>
+    <string name="rv_deleted_tag">DELETED</string>
+    <string name="rv_score">%1$d/%2$d</string>
+
+    <!-- Rating editor -->
+    <string name="re_new">NEW RATING</string>
+    <string name="re_edit">EDIT RATING</string>
+    <string name="re_style">STYLE</string>
+    <string name="re_stars">5 STARS</string>
+    <string name="re_hearts">5 HEARTS</string>
+    <string name="re_segments">10 BARS</string>
+    <string name="re_delete">DELETE RATING</string>
+    <string name="re_delete_note">Hidden from new reviews. Past scores are kept.</string>
+
+    <!-- Stats -->
+    <string name="st_week">WEEK</string>
+    <string name="st_month">MONTH</string>
+    <string name="st_hours">HOURS LOGGED</string>
+    <string name="st_vs_week">%1$s vs last wk</string>
+    <string name="st_vs_month">%1$s vs last mo</string>
+    <string name="st_avg">AVG DAY RATING</string>
+    <string name="st_avg_none">No reviews yet</string>
+    <string name="st_rated_days">%1$d days rated</string>
+    <string name="st_streak">LOGGING STREAK</string>
+    <string name="st_days">%1$dd</string>
+    <string name="st_best">best %1$dd</string>
+    <string name="st_daily">// DAILY LOGS</string>
+    <string name="st_full">FULL</string>
+    <string name="st_partial">PARTIAL</string>
+    <string name="st_tap_day">Tap a day to open its timeline.</string>
+    <string name="st_activities">// ACTIVITY BREAKDOWN</string>
+    <string name="st_no_hours">No hours logged in this period.</string>
+    <string name="st_goals">// PROGRESS GOALS</string>
+    <string name="st_goal_left">%1$dh left</string>
+    <string name="st_goal_reached">Target reached</string>
+    <string name="st_goal_period">+%1$dh in this period</string>
+    <string name="st_no_goals">No goals yet. Add one on the Log page or in Settings → Journal.</string>
+    <string name="st_achieved">ACHIEVED</string>
+    <string name="st_hours_short">%1$dh</string>
+
+    <!-- Settings: journal + reminder -->
+    <string name="settings_journal">// JOURNAL</string>
+    <string name="settings_activities">Activities</string>
+    <string name="settings_vibes">Vibes</string>
+    <string name="settings_goals">Progress goals</string>
+    <string name="settings_ratings">Review ratings</string>
+    <string name="settings_active_count">%1$d in use</string>
+    <string name="settings_goals_count">%1$d open · %2$d achieved</string>
+    <string name="settings_off">Off</string>
+    <string name="rr_title">DAILY REVIEW REMINDER</string>
+    <string name="rr_note">Skipped on days you've already reviewed.</string>
+    <string name="rr_off">OFF</string>
+
+    <!-- Journal editors -->
+    <string name="ed_tap_to_edit">Tap an item to edit or delete it.</string>
+    <string name="ed_new_activity">+ NEW ACTIVITY</string>
+    <string name="ed_new_vibe">+ NEW VIBE</string>
+    <string name="ed_new_rating">+ NEW RATING</string>
+    <string name="ve_new">NEW VIBE</string>
+    <string name="ve_edit">EDIT VIBE</string>
+    <string name="ve_label">Name</string>
+    <string name="ve_kaomoji">Kaomoji or emoji</string>
+    <string name="ve_delete">DELETE VIBE</string>
+    <string name="ge_edit">EDIT GOAL</string>
+    <string name="ge_delete">DELETE GOAL</string>
+    <string name="ge_delete_note">Logged hours stay; they just stop counting toward this goal.</string>
+    <string name="ql_goal_confirm">Mark this goal as achieved? It leaves the Log page. You can reopen it in Settings → Journal.</string>
 </resources>

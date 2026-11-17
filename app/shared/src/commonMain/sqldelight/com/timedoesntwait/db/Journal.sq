@@ -140,6 +140,9 @@ insertActivity:
 INSERT INTO activity(id, name, name_key, icon, keywords, sort_order, is_default, archived, updated_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?);
 
+activityByNameKey:
+SELECT * FROM activity WHERE name_key = ? AND deleted_at IS NULL;
+
 maxActivitySort:
 SELECT coalesce(max(sort_order), 0) FROM activity;
 
@@ -168,6 +171,19 @@ insertVibe:
 INSERT INTO vibe(id, label, label_key, kaomoji, sort_order, archived, updated_at)
 VALUES (?, ?, ?, ?, ?, 0, ?);
 
+-- Includes deleted (archived) vibes, so past entries keep showing them.
+allVibes:
+SELECT * FROM vibe WHERE deleted_at IS NULL ORDER BY sort_order;
+
+maxVibeSort:
+SELECT coalesce(max(sort_order), 0) FROM vibe;
+
+updateVibe:
+UPDATE vibe SET label = :label, kaomoji = :kaomoji, updated_at = :now WHERE id = :id;
+
+archiveVibe:
+UPDATE vibe SET archived = 1, updated_at = :now WHERE id = :id;
+
 -- ── entry ─────────────────────────────────────────────────
 
 entryForSlot:
@@ -194,6 +210,15 @@ LIMIT 300;
 softDeleteEntry:
 UPDATE entry SET deleted_at = :now, updated_at = :now WHERE id = :id;
 
+-- For Stats: every logged hour in a date range (dates are ISO text, so they compare correctly).
+entriesBetween:
+SELECT local_date, hour, activity_id FROM entry
+WHERE deleted_at IS NULL AND local_date >= :start AND local_date <= :end;
+
+-- For the logging streak: every day with at least one logged hour.
+loggedDates:
+SELECT DISTINCT local_date FROM entry WHERE deleted_at IS NULL ORDER BY local_date;
+
 -- ── goal ──────────────────────────────────────────────────
 
 goalsWithProgress:
@@ -211,6 +236,18 @@ SELECT coalesce(max(sort_order), 0) FROM goal;
 
 setGoalAchieved:
 UPDATE goal SET achieved = :achieved, updated_at = :now WHERE id = :id;
+
+updateGoal:
+UPDATE goal SET name = :name, target_hours = :target, achieved = :achieved, updated_at = :now WHERE id = :id;
+
+softDeleteGoal:
+UPDATE goal SET deleted_at = :now, updated_at = :now WHERE id = :id;
+
+-- Hours logged toward each goal in a date range (Stats: "+3h this week").
+goalHoursBetween:
+SELECT goal_id, count(*) AS hours FROM goal_log
+WHERE deleted_at IS NULL AND local_date >= :start AND local_date <= :end
+GROUP BY goal_id;
 
 goalLogsForSlot:
 SELECT * FROM goal_log WHERE local_date = ? AND hour = ? AND deleted_at IS NULL;
@@ -235,6 +272,50 @@ SELECT count(*) FROM rating_dimension;
 insertRatingDimension:
 INSERT INTO rating_dimension(id, name, name_key, kind, sort_order, is_default, archived, updated_at)
 VALUES (?, ?, ?, ?, ?, ?, 0, ?);
+
+-- Includes deleted (archived) ratings, so old reviews keep their scores.
+allRatingDimensions:
+SELECT * FROM rating_dimension WHERE deleted_at IS NULL ORDER BY sort_order, name;
+
+maxRatingSort:
+SELECT coalesce(max(sort_order), 0) FROM rating_dimension;
+
+updateRatingDimension:
+UPDATE rating_dimension SET name = :name, kind = :kind, updated_at = :now WHERE id = :id;
+
+archiveRatingDimension:
+UPDATE rating_dimension SET archived = 1, updated_at = :now WHERE id = :id;
+
+-- ── daily review ──────────────────────────────────────────
+
+reviewForDate:
+SELECT * FROM daily_review WHERE local_date = ? AND deleted_at IS NULL;
+
+insertReview:
+INSERT INTO daily_review(id, local_date, overall_rating, memo, saved_at, updated_at) VALUES (?, ?, ?, ?, ?, ?);
+
+updateReview:
+UPDATE daily_review SET overall_rating = :overall, memo = :memo, saved_at = :now, updated_at = :now WHERE id = :id;
+
+softDeleteReview:
+UPDATE daily_review SET deleted_at = :now, updated_at = :now WHERE id = :id;
+
+reviewsBetween:
+SELECT local_date, overall_rating FROM daily_review
+WHERE deleted_at IS NULL AND local_date >= :start AND local_date <= :end;
+
+-- Live and cleared scores of one review (a cleared score is soft-deleted and reused if set again).
+reviewRatingsFor:
+SELECT * FROM review_rating WHERE review_id = ?;
+
+insertReviewRating:
+INSERT INTO review_rating(id, review_id, dimension_id, value, note, updated_at) VALUES (?, ?, ?, ?, ?, ?);
+
+updateReviewRating:
+UPDATE review_rating SET value = :value, note = :note, deleted_at = NULL, updated_at = :now WHERE id = :id;
+
+softDeleteReviewRating:
+UPDATE review_rating SET deleted_at = :now, updated_at = :now WHERE id = :id;
 
 -- ── schedule ──────────────────────────────────────────────
 

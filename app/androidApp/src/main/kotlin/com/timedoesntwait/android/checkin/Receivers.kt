@@ -6,6 +6,7 @@ import android.content.Intent
 import android.util.Log
 import androidx.core.app.RemoteInput
 import com.timedoesntwait.data.JournalRepository
+import com.timedoesntwait.data.ReviewRepository
 import com.timedoesntwait.data.SettingsRepository
 import com.timedoesntwait.domain.EntrySource
 import com.timedoesntwait.domain.slotForPing
@@ -14,6 +15,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -97,6 +101,29 @@ class CheckinReplyReceiver : BroadcastReceiver(), KoinComponent {
         const val ACTION_QUICK = "com.timedoesntwait.action.QUICK"
         const val KEY_REPLY_TEXT = "reply_text"
         const val EXTRA_ACTIVITY_ID = "activity_id"
+    }
+}
+
+/** Fires at the review-reminder hour. Reminds only if today has no review yet, then schedules tomorrow's. */
+class ReviewReminderReceiver : BroadcastReceiver(), KoinComponent {
+    private val scheduler: CheckinScheduler by inject()
+    private val notifier: CheckinNotifier by inject()
+    private val reviews: ReviewRepository by inject()
+
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action != ACTION_REVIEW_REMINDER) return
+        runAsync {
+            try {
+                val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                if (!reviews.isReviewed(today)) notifier.showReviewReminder(today)
+            } finally {
+                scheduler.scheduleReviewReminder()
+            }
+        }
+    }
+
+    companion object {
+        const val ACTION_REVIEW_REMINDER = "com.timedoesntwait.action.REVIEW_REMINDER"
     }
 }
 

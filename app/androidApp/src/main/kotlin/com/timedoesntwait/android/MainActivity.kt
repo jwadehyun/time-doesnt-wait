@@ -13,6 +13,7 @@ import com.timedoesntwait.android.checkin.CheckinNotifier
 import com.timedoesntwait.android.checkin.CheckinScheduler
 import com.timedoesntwait.ui.App
 import com.timedoesntwait.ui.AppState
+import kotlinx.datetime.LocalDate
 import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
@@ -67,11 +68,16 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleIntent(intent: Intent?) {
-        if (intent?.action != ACTION_OPEN_SLOT) return
-        CheckinNotifier.slotFrom(intent)?.let { appState.openQuickLog(it) }
+        when (intent?.action) {
+            ACTION_OPEN_SLOT -> CheckinNotifier.slotFrom(intent)?.let { appState.openQuickLog(it) }
+            ACTION_OPEN_REVIEW -> appState.openReview(
+                intent.getStringExtra(CheckinNotifier.EXTRA_DATE)?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
+            )
+        }
     }
 
     companion object {
         const val ACTION_OPEN_SLOT = "com.timedoesntwait.action.OPEN_SLOT"
+        const val ACTION_OPEN_REVIEW = "com.timedoesntwait.action.OPEN_REVIEW"
     }
 }

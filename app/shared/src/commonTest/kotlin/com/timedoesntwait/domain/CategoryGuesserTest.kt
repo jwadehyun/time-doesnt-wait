@@ -5,7 +5,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class CategoryGuesserTest {
-    private val activities = listOf("grind", "snack", "vibe", "study", "walk", "nap", "game", "chat")
+    private val activities = listOf("grind", "snack", "vibe", "study", "walk", "nap", "game", "workout")
         .mapIndexed { i, key ->
             Activity("id-$key", key.replaceFirstChar { it.uppercase() }, key, key, emptyList(), i, true, false)
         } + Activity("id-guitar", "Guitar", null, "star", listOf("practice guitar", "기타"), 9, false, false)
@@ -18,6 +18,7 @@ class CategoryGuesserTest {
         assertEquals("snack", guess("Spicy ramen noodles with eggs"))
         assertEquals("grind", guess("Sprint review meeting, presentation went well"))
         assertEquals("walk", guess("Quick 15 min sun walk"))
+        assertEquals("workout", guess("Leg day at the gym"))
         assertEquals("nap", guess("20 min power nap"))
         assertEquals("study", guess("Finished chapter 4 of algorithms"))
     }
@@ -26,7 +27,7 @@ class CategoryGuesserTest {
     fun korean() {
         assertEquals("snack", guess("점심으로 라면 먹었다"))
         assertEquals("walk", guess("한강 산책했어"))
-        assertEquals("chat", guess("엄마랑 통화"))
+        assertEquals("workout", guess("헬스장에서 운동했어"))
         assertEquals("study", guess("영어 공부"))
     }
 

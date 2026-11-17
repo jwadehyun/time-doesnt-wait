@@ -31,10 +31,16 @@ class SettingsRepository(db: AppDatabase, private val io: CoroutineDispatcher) {
 
     fun onboardingDoneFlow(): Flow<Boolean> = observe(KEY_ONBOARDING_DONE).map { it == "true" }
 
-    /** Hour of the separate daily-review reminder. Design doc default: 22:00. */
-    var reviewReminderHour: Int
-        get() = get(KEY_REVIEW_REMINDER_HOUR)?.toIntOrNull() ?: 22
-        set(value) = put(KEY_REVIEW_REMINDER_HOUR, value.toString())
+    /** Hour of the separate daily-review reminder; null = off. Design doc default: 22:00. */
+    var reviewReminderHour: Int?
+        get() = when (val v = get(KEY_REVIEW_REMINDER_HOUR)) {
+            null -> DEFAULT_REVIEW_REMINDER_HOUR
+            "off" -> null
+            else -> v.toIntOrNull()?.takeIf { it in 0..23 } ?: DEFAULT_REVIEW_REMINDER_HOUR
+        }
+        set(value) = put(KEY_REVIEW_REMINDER_HOUR, value?.toString() ?: "off")
+
+    fun reviewReminderHourFlow(): Flow<Int?> = observe(KEY_REVIEW_REMINDER_HOUR).map { reviewReminderHour }
 
     /** How late the last check-in alarm fired, in minutes. Used for the battery-saver tip. */
     var lastAlarmLatenessMinutes: Int
@@ -48,5 +54,6 @@ class SettingsRepository(db: AppDatabase, private val io: CoroutineDispatcher) {
         const val KEY_ONBOARDING_DONE = "onboarding_done"
         const val KEY_REVIEW_REMINDER_HOUR = "review_reminder_hour"
         const val KEY_LAST_LATENESS = "last_alarm_lateness_min"
+        const val DEFAULT_REVIEW_REMINDER_HOUR = 22
     }
 }

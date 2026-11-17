@@ -83,7 +83,7 @@ fun TimelineScreen(
     val entries by remember(day) { repo.entriesFor(day) }.collectAsState(emptyList())
     // Includes deleted (archived) activities, so past entries keep their name and icon.
     val activities by remember { repo.allActivities() }.collectAsState(emptyList())
-    val vibes by remember { repo.vibes() }.collectAsState(emptyList())
+    val vibes by remember { repo.allVibes() }.collectAsState(emptyList())
     val schedule by remember { scheduleRepo.schedule() }.collectAsState(CheckinSchedule.DEFAULT)
     val listState = rememberLazyListState()
 

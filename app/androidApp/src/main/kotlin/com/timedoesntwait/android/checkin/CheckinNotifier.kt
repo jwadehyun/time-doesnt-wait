@@ -9,6 +9,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.RemoteInput
 import com.timedoesntwait.android.AndroidPlatform
+import com.timedoesntwait.android.MainActivity
 import com.timedoesntwait.android.R
 import com.timedoesntwait.data.JournalRepository
 import com.timedoesntwait.domain.Activity
@@ -46,7 +47,13 @@ class CheckinNotifier(
             c.getString(R.string.channel_status),
             NotificationManager.IMPORTANCE_LOW,
         )
-        context.getSystemService(NotificationManager::class.java).createNotificationChannels(listOf(checkins, status))
+        val review = NotificationChannel(
+            CHANNEL_REVIEW,
+            c.getString(R.string.channel_review),
+            NotificationManager.IMPORTANCE_DEFAULT,
+        ).apply { description = c.getString(R.string.channel_review_desc) }
+        context.getSystemService(NotificationManager::class.java)
+            .createNotificationChannels(listOf(checkins, status, review))
     }
 
     /** Posts the "What did you do 2–3 PM?" notification for [slot]. */
@@ -133,6 +140,37 @@ class CheckinNotifier(
 
     fun cancel(slot: HourSlot) = manager.cancel(notificationId(slot))
 
+    /** "How was today?" Tapping it opens the Review tab on [date]. */
+    fun showReviewReminder(date: LocalDate) {
+        if (!manager.areNotificationsEnabled()) return
+        val c = platform.localizedContext()
+        val open = PendingIntent.getActivity(
+            context,
+            REVIEW_NOTIFICATION_ID,
+            Intent(context, MainActivity::class.java)
+                .setAction(MainActivity.ACTION_OPEN_REVIEW)
+                .putExtra(EXTRA_DATE, date.toString())
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = NotificationCompat.Builder(context, CHANNEL_REVIEW)
+            .setSmallIcon(R.drawable.ic_stat_checkin)
+            .setColor(INK)
+            .setContentTitle(c.getString(R.string.review_title))
+            .setContentText(c.getString(R.string.review_text))
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true)
+            .setContentIntent(open)
+            .build()
+        try {
+            manager.notify(REVIEW_NOTIFICATION_ID, notification)
+        } catch (_: SecurityException) {
+        }
+    }
+
+    fun cancelReviewReminder() = manager.cancel(REVIEW_NOTIFICATION_ID)
+
     private fun replyIntent(slot: HourSlot, activityId: String?, mutable: Boolean): PendingIntent {
         val intent = Intent(context, CheckinReplyReceiver::class.java)
             .setAction(if (activityId == null) CheckinReplyReceiver.ACTION_REPLY else CheckinReplyReceiver.ACTION_QUICK)
@@ -170,12 +208,17 @@ class CheckinNotifier(
         "nap" -> c.getString(R.string.act_nap)
         "game" -> c.getString(R.string.act_game)
         "chat" -> c.getString(R.string.act_chat)
+        "workout" -> c.getString(R.string.act_workout)
         else -> a.name
     }
 
     companion object {
         const val CHANNEL_CHECKINS = "checkins"
         const val CHANNEL_STATUS = "status"
+        const val CHANNEL_REVIEW = "daily_review"
+
+        /** Outside the per-hour id range (those are masked to 0x0FFFFFFF). */
+        private const val REVIEW_NOTIFICATION_ID = 0x10000001
         const val ACTION_QUICK_REPLY = "com.timedoesntwait.action.QUICK_REPLY"
         const val EXTRA_DATE = "slot_date"
         const val EXTRA_HOUR = "slot_hour"

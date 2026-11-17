@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -70,6 +71,19 @@ fun Modifier.halftone(color: Color = Cobalt.InkFaint, spacing: Dp = Cobalt.DotSp
         }
         y += step
         row++
+    }
+}
+
+/** Diagonal lines, used for partly-filled bars. */
+fun Modifier.hatched(color: Color = Cobalt.Ink, spacing: Dp = 5.dp, stroke: Dp = 1.5.dp): Modifier = drawBehind {
+    val step = spacing.toPx()
+    val w = stroke.toPx()
+    clipRect {
+        var x = -size.height
+        while (x < size.width) {
+            drawLine(color, Offset(x, size.height), Offset(x + size.height, 0f), strokeWidth = w)
+            x += step
+        }
     }
 }
 
@@ -324,4 +338,39 @@ fun IconSquareButton(icon: String, description: String, onClick: () -> Unit, fil
         contentDescription = description,
         modifier = Modifier.size(Cobalt.MinTouch),
     ) { fg -> PixelIcon(icon, size = 20.dp, color = fg) }
+}
+
+/** Solid ink strip with ← title → used to step through days or periods. */
+@Composable
+fun StepperHeader(
+    title: String,
+    subtitle: String?,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    nextEnabled: Boolean,
+    modifier: Modifier = Modifier,
+    previousDescription: String = "Previous",
+    nextDescription: String = "Next",
+) {
+    Row(
+        modifier.fillMaxWidth().hardShadow().background(Cobalt.Ink).padding(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        StepperArrow("left", true, previousDescription, onPrevious)
+        Column(Modifier.weight(1f).padding(horizontal = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            PixelText(title, style = CobaltTheme.type.title, color = Cobalt.Card, align = TextAlign.Center, maxLines = 1)
+            if (subtitle != null) PixelText(subtitle, style = CobaltTheme.type.small, color = Cobalt.Card, maxLines = 1)
+        }
+        StepperArrow("right", nextEnabled, nextDescription, onNext)
+    }
+}
+
+@Composable
+private fun StepperArrow(icon: String, enabled: Boolean, description: String, onClick: () -> Unit) {
+    Box(
+        Modifier.size(44.dp).inkBorder(color = if (enabled) Cobalt.Card else Cobalt.Ink)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = description },
+        contentAlignment = Alignment.Center,
+    ) { PixelIcon(icon, size = 18.dp, color = if (enabled) Cobalt.Card else Cobalt.DeepInk) }
 }

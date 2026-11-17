@@ -12,4 +12,6 @@ fun sharedModule(driverFactory: DriverFactory) = module {
     single { JournalRepository(get(), get(), Dispatchers.IO) }
     single { ScheduleRepository(get(), get(), Dispatchers.IO) }
     single { SettingsRepository(get(), Dispatchers.IO) }
+    single { ReviewRepository(get(), get(), Dispatchers.IO) }
+    single { StatsRepository(get(), get(), Dispatchers.IO) }
 }

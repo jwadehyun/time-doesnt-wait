@@ -6,7 +6,9 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import com.timedoesntwait.domain.Activity
+import com.timedoesntwait.domain.RatingDimension
 import com.timedoesntwait.domain.Vibe
+import com.timedoesntwait.domain.usesBuiltInLabel
 import com.timedoesntwait.domain.usesBuiltInName
 import com.timedoesntwait.resources.Res
 import com.timedoesntwait.resources.act_chat
@@ -17,6 +19,10 @@ import com.timedoesntwait.resources.act_snack
 import com.timedoesntwait.resources.act_study
 import com.timedoesntwait.resources.act_vibe
 import com.timedoesntwait.resources.act_walk
+import com.timedoesntwait.resources.act_workout
+import com.timedoesntwait.resources.rating_happiness
+import com.timedoesntwait.resources.rating_productivity
+import com.timedoesntwait.resources.rating_progress
 import com.timedoesntwait.resources.vibe_chill
 import com.timedoesntwait.resources.vibe_solid
 import com.timedoesntwait.resources.vibe_super
@@ -38,6 +44,7 @@ private val activityKeys: Map<String, StringResource> = mapOf(
     "nap" to Res.string.act_nap,
     "game" to Res.string.act_game,
     "chat" to Res.string.act_chat,
+    "workout" to Res.string.act_workout,
 )
 
 private val vibeKeys: Map<String, StringResource> = mapOf(
@@ -53,7 +60,18 @@ fun Activity.label(): String =
     if (usesBuiltInName) nameKey?.let(activityKeys::get)?.let { stringResource(it) } ?: name else name
 
 @Composable
-fun Vibe.label(): String = labelKey?.let(vibeKeys::get)?.let { stringResource(it) } ?: label
+fun Vibe.label(): String =
+    if (usesBuiltInLabel) labelKey?.let(vibeKeys::get)?.let { stringResource(it) } ?: label else label
+
+private val ratingKeys: Map<String, StringResource> = mapOf(
+    "productivity" to Res.string.rating_productivity,
+    "happiness" to Res.string.rating_happiness,
+    "progress" to Res.string.rating_progress,
+)
+
+@Composable
+fun RatingDimension.label(): String =
+    if (usesBuiltInName) nameKey?.let(ratingKeys::get)?.let { stringResource(it) } ?: name else name
 
 fun nowLocal(clock: Clock = Clock.System): LocalDateTime =
     clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
